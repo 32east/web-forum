@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>{{ if .Title }}{{ .Title }}{{ else }}Форум{{ end }}</title>
+    <link rel="stylesheet" href="/./styles/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <script src="/./scripts/main.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <a class="logo" href="/">Форумчанский</a>
+        <nav>
+            <ul style="display: flex;">
+                <a class="forum-button" href="/">Главная</a>
+                <a class="forum-button" href="/./users">Юзеры</a>
+                <a class="forum-button" href="/./faq">FAQ</a>
+            </ul>
+        </nav>
+
+        {{ if.Authorized }}
+        <a id="menu-button" class="login-button" style="width: auto; padding: 0 10px; overflow: hidden;">
+            {{ if .Avatar }}
+            <img src="/./imgs/avatars/{{ .Avatar }}" width="24" height="24" alt="avatar" style="object-fit: cover; vertical-align: middle; border-radius: 100%; box-shadow: 0 0 1px black;">
+            {{ end }}
+            {{ .Username }}
+        </a>
+        {{ else }}
+        <a class="login-button" href="../login">Войти</a>
+        {{ end }}
+    </div>
+
+    <div id="menu" class="menu-container">
+        <a class="menu-button" id="settings-button" href="/./profile/settings">Изменить профиль</a>
+        <a class="menu-button" id="logout-button">Выйти с аккаунта</a>
+    </div>
+
+    <div class="page">
+        {{ .Content }}
+    </div>
+</body>
+</html>

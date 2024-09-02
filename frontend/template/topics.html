@@ -1,0 +1,51 @@
+<div class="forum-list">
+    <div style="display: flex;">
+        <h2>{{ .forum_name }}</h2>
+        {{ if .Authorized }}
+        <a href="/./topic/create?category={{ $.forum_id }}" style="text-align: right;right: 21px;position: absolute;line-height:32px;"> Создать новый топик </a>
+        {{ end }}
+    </div>
+
+    <ul>
+        {{ if .category_is_empty }}
+        <div class="not-authorized-container">
+            <span>В данный момент топиков нет.</span>
+            <span>Будьте первым, кто оставит след в этой истории!</span>
+        </div>
+        {{ else }}
+            {{ range .topics}}
+            <li class="li-topic-container">
+                <a class="topic-container" href="/./topics/{{ .topic_id }}">
+                    {{ if .avatar }}
+                    <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                    {{ else }}
+                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                    {{ end }}
+
+                    <div>
+                        <span style="font-size: 24px;">{{ .topic_name }}</span>
+                        <br>
+                        <span>Создал: {{ .username }} в {{ .create_time }}</span>
+                    </div>
+                </a>
+            </li>
+            {{ end }}
+        {{ end }}
+    </ul>
+
+    {{ if .paginator_left }}
+    <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_left }}">‹</a>
+    {{ else }}
+    <a class="paginator-button paginator-block">‹</a>
+    {{ end }}
+
+    {{ range .paginator }}
+        <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ . }}">{{ . }}</a>
+    {{ end }}
+
+    {{ if .paginator_right }}
+    <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_right }}">›</a>
+    {{ else }}
+    <a class="paginator-button paginator-block">›</a>
+    {{ end }}
+</div>

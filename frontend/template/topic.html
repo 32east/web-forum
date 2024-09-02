@@ -1,0 +1,64 @@
+<div class="forum-list">
+    <h2>Топик {{ .forum_name }}</h2>
+
+    <ul>
+        <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
+            <div style="display: flex;">
+                {{ if .avatar }}
+                <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                {{ else }}
+                <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                {{ end }}
+
+                <div>
+                    <span style="font-size: 24px;">{{ .topic_name }}</span>
+                    <br>
+                    <span>{{ .username }} в {{ .create_time }}</span>
+                    <br><br>
+                    <span>{{ .message }}</span>
+                </div>
+            </div>
+
+            {{ if .sign_text }}
+            <div class="sign-container">
+                <span>{{ .sign_text }}</span>
+            </div>
+            {{ end }}
+        </li>
+
+        {{ range .messages }}
+        <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
+            <div style="display: flex;">
+                {{ if .avatar }}
+                    <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                {{ else }}
+                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                {{ end }}
+
+                <div>
+                    <span>{{ .username }} в {{ .create_time }}</span>
+                    <br>
+                    <span>{{ .message }}</span>
+                </div>
+            </div>
+
+            {{ if .sign_text }}
+                <div class="sign-container">
+                    <span>{{ .sign_text }}</span>
+                </div>
+            {{ end }}
+        </li>
+        {{ end }}
+    </ul>
+
+    {{ if .Authorized }}
+    <label>
+        Введите своё сообщение:
+        <textarea class="message-textarea" id="message-textarea"></textarea>
+    </label>
+    <br>
+
+    <button id="send-message">Отправить</button>
+    <div id="error-msg"></div>
+    {{ end }}
+</div>

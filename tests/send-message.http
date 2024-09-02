@@ -1,0 +1,9 @@
+### Send request with dynamic variables in request's body
+POST http://localhost/api/send-message
+Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRpdGlvbmFsIjoiYWNjZXNzIiwicGFzc3dvcmQiOiJhNjY1YTQ1OTIwNDIyZjlkNDE3ZTQ4NjdlZmRjNGZiOGEwNGExZjNmZmYxZmEwN2U5OThlODZmN2Y3YTI3YWUzIiwicmFuZCI6InpPamtGV1B0N1RiRytFaXJmbXoyQVE9PSIsInVzZXJuYW1lIjoicmVpbCJ9.TnNhyEKWnY9Qny4IGO-W3jjkQ--rd2QLl_C3cXKLafE;
+Content-Type: application/json
+
+{
+  "topic_id": 1,
+  "message": "fuck off"
+}

@@ -1,0 +1,29 @@
+{{if .Authorized }}
+<div class="forum-list">
+    <h2>Создание нового топика</h2>
+
+    <div style="width: fit-content;">
+        <label for="categorys">Категория:</label>
+        <select id="categorys" name="categorys">
+            {{ range .categorys }}
+            <option value="{{ .forum_id }}" {{ if .is_selected }} selected {{ end }}>{{ .forum_name }}</option>
+            {{ end }}
+        </select>
+
+        <label class="profile-settings-label">
+            Тема:
+            <input class="left-right-5px" placeholder="введите название темы">
+        </label>
+
+        <label class="profile-settings-label">
+            Сообщение:
+            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="введите первоначальное сообщение"></textarea>
+        </label>
+
+        <button id="save-settings" class="up-5px"> Создать тему </button>
+    </div>
+</div>
+
+{{ else }}
+{{ template "not-authorized" }}
+{{ end }}

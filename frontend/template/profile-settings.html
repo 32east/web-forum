@@ -1,0 +1,50 @@
+{{if .Authorized }}
+<div class="forum-list">
+    <h2>Настройки профиля</h2>
+
+    <div style="width: fit-content;">
+        {{ if .Email }}
+    <label class="profile-settings-label">
+        Текущая электронная почта: {{ .Email }}
+    </label>
+        {{ end }}
+
+    <label class="profile-settings-label">
+        Введите ваш юзернейм:
+        <input class="left-right-5px" placeholder="Юзернейм" {{ if .Username }} value="{{ .Username }}" {{ end }}>
+    </label>
+
+    <label class="profile-settings-label">
+        Введите ваше описание:
+        <input class="left-right-5px" placeholder="Описание" {{ if .Description }} value="{{ .Description }}" {{ end }}>
+    </label>
+
+        <label class="profile-settings-label">
+            Введите текст подписи:
+            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="Текст подписи" id="signText" name="signText">{{ if .SignText }}{{ .SignText }}{{ end }}</textarea>
+        </label>
+
+        {{ if .Avatar }}
+        <div style="display: flex;">
+            <label class="profile-settings-label" style="margin: 5px 0; ">
+                Текущая аватарка:
+                <img class="avatar" width="128" height="128" style="margin: 0 5px; height: 100%;" src="/./imgs/avatars/{{ .Avatar }}" alt="avatar">
+            </label>
+
+            <button id="remove-avatar-button" style="height: 24px; margin: 10px 0;">Удалить</button>
+        </div>
+        {{ end }}
+
+    <label class="profile-settings-label">
+        Загрузите аватарку:
+        <input class="left-right-5px" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+    </label>
+
+    <button id="save-settings" class="up-5px"> Сохранить </button>
+    </div>
+</div>
+
+
+{{ else }}
+{{ template "not-authorized" }}
+{{ end }}
