@@ -1,10 +1,12 @@
-package api
+package sqlDb
 
 import (
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
 	"os"
 )
+
+var MySqlDB *sql.DB
 
 func ConnectDatabase() *sql.DB {
 	config := mysql.Config{
@@ -29,5 +31,6 @@ func ConnectDatabase() *sql.DB {
 		panic(err)
 	}
 
+	MySqlDB = Database
 	return Database
 }

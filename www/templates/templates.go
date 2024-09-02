@@ -1,9 +1,25 @@
-package web
+package templates
 
-import "html/template"
+import (
+	"bytes"
+	"html/template"
+	"reflect"
+)
 
 func ParseFiles(page string) (*template.Template, error) {
 	return template.ParseFiles(page, "frontend/template/not-authorized.html")
+}
+
+func ContentAdd(infoToSend *map[string]interface{}, tmpl *template.Template, content any) {
+	if reflect.ValueOf(content).Kind() == reflect.Map {
+		for k, v := range *infoToSend {
+			content.(map[string]interface{})[k] = v
+		}
+	}
+
+	newBytesBuffer := new(bytes.Buffer)
+	tmpl.Execute(newBytesBuffer, content)
+	(*infoToSend)["Content"] = template.HTML(newBytesBuffer.String())
 }
 
 var IndexTemplate = template.Must(ParseFiles("frontend/template/index.html"))

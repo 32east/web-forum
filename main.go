@@ -1,19 +1,17 @@
 package main
 
 import (
-	"web-forum/api"
-	"web-forum/frontend/web"
-	"web-forum/internal"
+	"web-forum/system"
+	"web-forum/system/redisDb"
+	"web-forum/system/sqlDb"
+	"web-forum/www"
 )
 
 func main() {
-	internal.RegisterEnvironment()
+	system.RegisterEnvironment()
 
-	db := api.ConnectDatabase()
-	rdb := api.ConnectToRedis()
+	db := sqlDb.ConnectDatabase()
+	rdb := redisDb.ConnectToRedis()
 
-	api.RegisterURLs(db, rdb)
-	internal.SetDB(db)
-
-	web.ExecuteNewServer(db, rdb)
+	www.RegisterURLs(db, rdb)
 }

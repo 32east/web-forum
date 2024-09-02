@@ -1,4 +1,4 @@
-package api
+package auth
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 	"web-forum/internal"
+	"web-forum/www/services/account"
 )
 
 var ctx = context.Background()
@@ -206,7 +207,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, 
 		return
 	}
 
-	accountInfo, queryErr := internal.GetAccount(loginStr)
+	accountInfo, queryErr := account.GetAccount(loginStr)
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, queryErr.Error()+" in query"
@@ -378,15 +379,15 @@ func HandleLogout(writer *http.ResponseWriter, reader *http.Request, db *sql.DB,
 		return
 	}
 
-	findAccount, errToFind := internal.GetAccount(loginStr)
+	findAccount, errToFind := account.GetAccount(loginStr)
 
 	if errToFind != nil {
 		answer["success"], answer["reason"] = false, "couldn't find account"
 		return
 	}
 
-	delete(internal.CachedAccounts, loginStr)
-	delete(internal.CachedAccountsById, findAccount.Id)
+	delete(account.CachedAccounts, loginStr)
+	delete(account.CachedAccountsById, findAccount.Id)
 
 	rdb.Del(ctx, loginStr)
 	rdb.Del(ctx, "AToken:"+buffer["access_token"])

@@ -1,4 +1,4 @@
-package api
+package topics
 
 import (
 	"context"
@@ -8,12 +8,14 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"web-forum/frontend/web"
+	"web-forum/api/auth"
+	"web-forum/api/message"
 	"web-forum/internal"
+	"web-forum/www/services/account"
 )
 
 func HandleMessage(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
-	newJSONEncoder, answer := PrepareHandle(writer)
+	newJSONEncoder, answer := auth.PrepareHandle(writer)
 	defer func() {
 		if !answer["success"].(bool) {
 			log.Println(string(reader.RemoteAddr) + " > on message send: " + answer["reason"].(string))
@@ -38,14 +40,18 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request, db *sql.DB
 		return
 	}
 
-	accInfo, errGetAccount := internal.GetAccount(login)
+	accInfo, errGetAccount := account.GetAccount(login)
 
 	if errGetAccount != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
 		return
 	}
 
-	jsonData := map[string]string{}
+	jsonData := map[string]interface{}{
+		"message":  "",
+		"topic_id": -1,
+	}
+
 	jsonErr := json.NewDecoder(reader.Body).Decode(&jsonData)
 
 	if jsonErr != nil {
@@ -76,7 +82,7 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request, db *sql.DB
 }
 
 func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
-	newJSONEncoder, answer := PrepareHandle(writer)
+	newJSONEncoder, answer := auth.PrepareHandle(writer)
 	defer func() {
 		if !answer["success"].(bool) {
 			log.Println(string(reader.RemoteAddr) + " > on topic create: " + answer["reason"].(string))
@@ -101,7 +107,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sq
 		return
 	}
 
-	accInfo, err := internal.GetAccount(login)
+	accInfo, err := account.GetAccount(login)
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
@@ -143,7 +149,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sq
 	}
 
 	newTopicObject := internal.Topic{Id: int(lastInsertId), Name: name, Message: msg, Creator: accountId, CreateTime: currentTime}
-	redirect := web.CreateTopic(newTopicObject, db, rdb)
+	redirect := message.CreateTopic(newTopicObject, db, rdb)
 
 	answer["success"], answer["redirect"] = true, redirect
 }

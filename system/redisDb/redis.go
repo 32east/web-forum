@@ -1,4 +1,4 @@
-package api
+package redisDb
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 )
+
+var RedisDB *redis.Client
 
 func ConnectToRedis() *redis.Client {
 	redisDb, err := strconv.Atoi(os.Getenv("REDIS_DB"))
@@ -26,5 +28,6 @@ func ConnectToRedis() *redis.Client {
 		panic(rdbErr)
 	}
 
+	RedisDB = rdb
 	return rdb
 }

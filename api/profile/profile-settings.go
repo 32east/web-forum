@@ -1,4 +1,4 @@
-package api
+package profile
 
 import (
 	"bytes"
@@ -15,11 +15,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"web-forum/api/auth"
 	"web-forum/internal"
+	"web-forum/www/services/account"
 )
 
 func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
-	newJSONEncoder, answer := PrepareHandle(writer)
+	newJSONEncoder, answer := auth.PrepareHandle(writer)
 	defer newJSONEncoder.Encode(answer)
 
 	if reader.Method != "POST" {
@@ -35,7 +37,7 @@ func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 		return
 	}
 
-	account, errGetAccount := internal.ReadAccountFromCookie(cookie, rdb)
+	accountData, errGetAccount := account.ReadAccountFromCookie(cookie, rdb)
 
 	if errGetAccount != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
@@ -131,10 +133,10 @@ func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 		encodeThisString := hex.EncodeToString(newSha256Buffer.Sum(nil))
 		sixStartStr := encodeThisString[:6]
 
-		fileName := fmt.Sprintf("%d-%s.%s", account.Id, sixStartStr, contentTypeOfThisFile[len("image/"):])
+		fileName := fmt.Sprintf("%d-%s.%s", accountData.Id, sixStartStr, contentTypeOfThisFile[len("image/"):])
 
-		if account.Avatar.Valid {
-			os.Remove(internal.AvatarsFilePath + account.Avatar.String)
+		if accountData.Avatar.Valid {
+			os.Remove(internal.AvatarsFilePath + accountData.Avatar.String)
 		}
 
 		file, fileErr := os.Create(internal.AvatarsFilePath + fileName)
@@ -174,7 +176,7 @@ func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 
 	for key, value := range valuesToChange {
 		formatQuery := fmt.Sprintf("UPDATE `users` SET `%s` = ? WHERE id = ?;", key)
-		_, queryErr := tx.Exec(formatQuery, value, account.Id)
+		_, queryErr := tx.Exec(formatQuery, value, accountData.Id)
 
 		if queryErr != nil {
 			answer["success"], answer["reason"] = false, queryErr.Error()
@@ -191,6 +193,6 @@ func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 
 	answer["success"] = true
 
-	delete(internal.CachedAccounts, account.Login)
-	delete(internal.CachedAccountsById, account.Id)
+	delete(account.CachedAccounts, accountData.Login)
+	delete(account.CachedAccountsById, accountData.Id)
 }

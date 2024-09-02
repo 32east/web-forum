@@ -1,4 +1,4 @@
-package internal
+package account
 
 import (
 	"context"
@@ -6,16 +6,27 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"net/http"
+	"time"
+	"web-forum/system/sqlDb"
 )
+
+type Account struct {
+	Id       int
+	Login    string
+	Password string
+	Username string
+	Email    string
+
+	Avatar      sql.NullString
+	Description sql.NullString
+	SignText    sql.NullString
+
+	CreatedAt time.Time
+	UpdatedAt sql.NullTime
+}
 
 var CachedAccounts = make(map[string]Account)
 var CachedAccountsById = make(map[int]*Account)
-
-var db *sql.DB
-
-func SetDB(dbSet *sql.DB) {
-	db = dbSet
-}
 
 func ReadAccountFromCookie(cookie *http.Cookie, rdb *redis.Client) (*Account, error) {
 	account := &Account{}
@@ -42,7 +53,7 @@ func GetAccountById(id int) (*Account, error) {
 	}
 
 	accountInfo := &Account{}
-	row := db.QueryRow("SELECT * FROM `users` WHERE `id` = ?;", id)
+	row := sqlDb.MySqlDB.QueryRow("SELECT * FROM `users` WHERE `id` = ?;", id)
 
 	if row == nil {
 		return accountInfo, fmt.Errorf("Account not found")
@@ -81,7 +92,7 @@ func GetAccount(login string) (*Account, error) {
 	}
 
 	accountInfo := &Account{}
-	row := db.QueryRow("SELECT * FROM `users` WHERE `login` =?;", login)
+	row := sqlDb.MySqlDB.QueryRow("SELECT * FROM `users` WHERE `login` =?;", login)
 
 	if row == nil {
 		return accountInfo, fmt.Errorf("Account not found")
