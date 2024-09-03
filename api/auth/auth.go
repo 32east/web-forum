@@ -39,9 +39,16 @@ func GenerateNewJWTToken(login string, additionalParam string) (string, error) {
 		return "", err
 	}
 
+	expirationTime := time.Now().Add(time.Hour * 24)
+
+	if additionalParam == "refresh" {
+		expirationTime = time.Now().Add(time.Hour * 72)
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username":   login,
+		"login":      login,
 		"additional": additionalParam,
+		"expiresAt":  fmt.Sprintf("%d", expirationTime.Unix()),
 	})
 
 	tokenStr, err := token.SignedString(internal.HmacSecret)
@@ -234,39 +241,6 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	rdbGet := redisDb.RedisDB.Get(ctx, loginStr)
-	val, errRdbGet := rdbGet.Result()
-
-	// Эта проверка возможно никогда не будет срабатывать.
-	if errRdbGet == nil {
-		buffer := map[string]string{}
-		unmarshalledValue := json.Unmarshal([]byte(val), &buffer)
-
-		if unmarshalledValue != nil {
-			// Мы в ключе Login храним не JSON структуру??
-			answer["success"], answer["reason"] = false, unmarshalledValue.Error()
-			return
-		}
-
-		accessToken := buffer["access_token"]
-		answer["success"], answer["access_token"], answer["refresh_token"] = true, accessToken, buffer["refresh_token"]
-
-		// Бля ну я хз как тут узнать, когда у нас срок годности у токена истекает.
-		http.SetCookie(*writer, &http.Cookie{
-			Name:  "access_token",
-			Value: accessToken,
-			Path:  "/",
-		})
-
-		http.SetCookie(*writer, &http.Cookie{
-			Name:  "refresh_token",
-			Value: buffer["refresh_token"],
-			Path:  "/",
-		})
-
-		return
-	}
-
 	accessToken, errAccess := GenerateNewJWTToken(loginStr, "access")
 
 	if errAccess != nil {
@@ -283,43 +257,10 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	errATokenSet := redisDb.RedisDB.Set(ctx, "AToken:"+accessToken, loginStr, time.Hour*12)
-
-	if errATokenSet.Err() != nil {
-		// Если что можно будет добавить обработчик в базу данных.
-		// Но это уже потом...
-
-		answer["success"], answer["reason"] = false, errATokenSet.Err().Error()
-		return
-	}
-
 	errRTokenSet := redisDb.RedisDB.Set(ctx, "RToken:"+refreshToken, loginStr, time.Hour*72)
 
 	if errRTokenSet.Err() != nil {
-		answer["success"], answer["reason"] = false, errATokenSet.Err().Error()
-		return
-	}
-
-	// Будет служить анти-спамом.
-	// То есть если человек попросит токен в эти 60 секунд,
-	// то ему выдастся уже кэшированный токен.
-	marshal, marshalErr := json.Marshal(map[string]string{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
-
-	if marshalErr != nil {
-		answer["success"], answer["reason"] = false, marshalErr.Error()
-
-		return
-	}
-
-	setErr := redisDb.RedisDB.Set(ctx, loginStr, string(marshal), time.Hour*12)
-	redisQueryErr := setErr.Err()
-
-	if redisQueryErr != nil {
-		answer["success"], answer["reason"] = false, setErr
-
+		answer["success"], answer["reason"] = false, errRTokenSet.Err().Error()
 		return
 	}
 
@@ -354,53 +295,21 @@ func HandleLogout(writer *http.ResponseWriter, reader *http.Request) {
 
 		return
 	}
-
-	cookie, err := reader.Cookie("access_token")
-
-	if err != nil {
-		answer["success"], answer["reason"] = false, "invalid jwt token"
-
-		return
-	}
-
-	loginStr, errRdbGet := redisDb.RedisDB.Get(ctx, "AToken:"+cookie.Value).Result()
-
-	if errRdbGet != nil {
-		answer["success"], answer["reason"] = false, "invalid atoken"
-
-		return
-	}
-
-	mapWithAccessAndRefreshToken, mapRdbErr := redisDb.RedisDB.Get(ctx, loginStr).Result()
-
-	if mapRdbErr != nil {
-		answer["success"], answer["reason"] = false, mapRdbErr.Error()
-
-		return
-	}
-
-	buffer := map[string]string{}
-	unmarshalErr := json.Unmarshal([]byte(mapWithAccessAndRefreshToken), &buffer)
-
-	if unmarshalErr != nil {
-		// Мы в ключе Login храним не JSON структуру??
-		answer["success"], answer["reason"] = false, unmarshalErr.Error()
-		return
-	}
-
-	findAccount, errToFind := account.GetAccount(loginStr)
-
-	if errToFind != nil {
-		answer["success"], answer["reason"] = false, "couldn't find account"
-		return
-	}
-
-	delete(account.CachedAccounts, loginStr)
-	delete(account.CachedAccountsById, findAccount.Id)
-
-	redisDb.RedisDB.Del(ctx, loginStr)
-	redisDb.RedisDB.Del(ctx, "AToken:"+buffer["access_token"])
-	redisDb.RedisDB.Del(ctx, "RToken:"+buffer["refresh_token"])
+	//
+	//cookie, err := reader.Cookie("access_token")
+	//
+	//if err != nil {
+	//	answer["success"], answer["reason"] = false, "invalid jwt token"
+	//
+	//	return
+	//}
+	//
+	//_, tokenErr := GetTokenInfo(cookie.Value)
+	//
+	//if tokenErr != nil {
+	//	answer["success"], answer["reason"] = false, "couldn't find account"
+	//	return
+	//}
 
 	http.SetCookie(*writer, &http.Cookie{
 		Name:   "access_token",
@@ -414,6 +323,7 @@ func HandleLogout(writer *http.ResponseWriter, reader *http.Request) {
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,
+		// HttpOnly: true,
 	})
 
 	answer["success"] = true

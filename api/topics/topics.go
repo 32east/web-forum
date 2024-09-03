@@ -1,7 +1,6 @@
 package topics
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,7 +9,6 @@ import (
 	"unicode/utf8"
 	"web-forum/api/auth"
 	"web-forum/internal"
-	"web-forum/system/redisDb"
 	"web-forum/system/sqlDb"
 	"web-forum/www/handlers"
 	"web-forum/www/services/account"
@@ -34,18 +32,11 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	login, ok := redisDb.RedisDB.Get(context.Background(), "AToken:"+cookie.Value).Result()
+	accInfo, tokenErr := account.ReadAccountFromCookie(cookie)
 
-	if ok != nil {
+	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
 
-		return
-	}
-
-	accInfo, errGetAccount := account.GetAccount(login)
-
-	if errGetAccount != nil {
-		answer["success"], answer["reason"] = false, "not authorized"
 		return
 	}
 
@@ -106,18 +97,11 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	login, ok := redisDb.RedisDB.Get(context.Background(), "AToken:"+cookie.Value).Result()
+	accInfo, tokenErr := account.ReadAccountFromCookie(cookie)
 
-	if ok != nil {
+	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
 
-		return
-	}
-
-	accInfo, err := account.GetAccount(login)
-
-	if err != nil {
-		answer["success"], answer["reason"] = false, "not authorized"
 		return
 	}
 

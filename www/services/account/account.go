@@ -1,13 +1,12 @@
 package account
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
-	"web-forum/system/redisDb"
 	"web-forum/system/sqlDb"
+	jwt_token "web-forum/www/services/jwt-token"
 )
 
 type Account struct {
@@ -29,17 +28,16 @@ var CachedAccounts = make(map[string]Account)
 var CachedAccountsById = make(map[int]*Account)
 
 func ReadAccountFromCookie(cookie *http.Cookie) (*Account, error) {
-	account := &Account{}
-	login, err := redisDb.RedisDB.Get(context.Background(), "AToken:"+cookie.Value).Result()
+	tokenInfo, tokenErr := jwt_token.GetTokenInfo(cookie.Value)
 
-	if err != nil {
-		return account, err
+	if tokenErr != nil {
+		return nil, tokenErr
 	}
 
-	accInfo, errGetAccount := GetAccount(login)
+	accInfo, errGetAccount := GetAccount(tokenInfo["login"].(string))
 
 	if errGetAccount != nil {
-		return account, errGetAccount
+		return nil, errGetAccount
 	}
 
 	return accInfo, nil

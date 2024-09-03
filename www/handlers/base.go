@@ -6,7 +6,7 @@ import (
 )
 
 func HandleBase(stdRequest *http.Request, writer *http.ResponseWriter) (*map[string]interface{}, *account.Account) {
-	go account.TokensRefreshInRedis(stdRequest, writer) // TODO: Расскомент!!!
+	// go account.TokensRefreshInRedis(stdRequest, writer) // TODO: Расскомент!!!
 
 	infoToSend := make(map[string]interface{})
 	cookie, err := stdRequest.Cookie("access_token")
