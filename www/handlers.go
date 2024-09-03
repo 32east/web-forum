@@ -1,16 +1,14 @@
 package www
 
 import (
-	"database/sql"
-	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
 	"os"
 	"web-forum/api/auth"
 	"web-forum/api/profile"
 	"web-forum/api/topics"
-	"web-forum/frontend/web"
 	"web-forum/www/handlers"
+	initialize_functions "web-forum/www/initialize-functions"
 )
 
 func RegisterStaticFiles(path string, urlPath string) {
@@ -37,18 +35,18 @@ func RegisterStaticFiles(path string, urlPath string) {
 	}
 }
 
-func RegisterURLs(db *sql.DB, rdb *redis.Client) {
+func RegisterURLs() {
 	//RegisterStaticFiles("frontend/template/imgs", "images")
 
-	fileServer := http.FileServer(http.Dir("frontend/template/imgs"))
+	fileServer := http.FileServer(http.Dir("frontend/imgs"))
 	http.Handle("/imgs/", http.StripPrefix("/imgs", fileServer))
 
 	// CSS файлы
-	fileServer = http.FileServer(http.Dir("frontend/template/styles"))
+	fileServer = http.FileServer(http.Dir("frontend/styles"))
 	http.Handle("/styles/", http.StripPrefix("/styles", fileServer))
 
 	// JS файлы
-	fileServer = http.FileServer(http.Dir("frontend/template/scripts"))
+	fileServer = http.FileServer(http.Dir("frontend/scripts"))
 	http.Handle("/scripts/", http.StripPrefix("/scripts", fileServer))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -67,15 +65,15 @@ func RegisterURLs(db *sql.DB, rdb *redis.Client) {
 	http.HandleFunc("/topic/create", func(w http.ResponseWriter, r *http.Request) { handlers.HandleTopicCreate(&w, r) })
 	http.HandleFunc("/profile/settings", func(w http.ResponseWriter, r *http.Request) { handlers.HandleProfileSettings(&w, r) })
 
-	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogin(&w, r, db, rdb) })
-	http.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) { auth.HandleRegister(&w, r, db) })
-	http.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogout(&w, r, db, rdb) })
-	http.HandleFunc("/api/send-message", func(w http.ResponseWriter, r *http.Request) { topics.HandleMessage(&w, r, db, rdb) })
-	http.HandleFunc("/api/profile/settings", func(w http.ResponseWriter, r *http.Request) { profile.HandleSettings(&w, r, db, rdb) })
-	http.HandleFunc("/api/topics/create", func(w http.ResponseWriter, r *http.Request) { topics.HandleTopicCreate(&w, r, db, rdb) })
+	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogin(&w, r) })
+	http.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) { auth.HandleRegister(&w, r) })
+	http.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogout(&w, r) })
+	http.HandleFunc("/api/send-message", func(w http.ResponseWriter, r *http.Request) { topics.HandleMessage(&w, r) })
+	http.HandleFunc("/api/profile/settings", func(w http.ResponseWriter, r *http.Request) { profile.HandleSettings(&w, r) })
+	http.HandleFunc("/api/topics/create", func(w http.ResponseWriter, r *http.Request) { topics.HandleTopicCreate(&w, r) })
 
-	web.InitializeForumsPages(db, rdb)
-	web.InitializeTopicsPages(db, rdb)
+	initialize_functions.InitializeForumsPages()
+	initialize_functions.InitializeTopicsPages()
 
 	http.ListenAndServe(":80", nil)
 }

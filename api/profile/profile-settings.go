@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/nfnt/resize"
-	"github.com/redis/go-redis/v9"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -17,10 +16,11 @@ import (
 	"strings"
 	"web-forum/api/auth"
 	"web-forum/internal"
+	"web-forum/system/sqlDb"
 	"web-forum/www/services/account"
 )
 
-func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
+func HandleSettings(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := auth.PrepareHandle(writer)
 	defer newJSONEncoder.Encode(answer)
 
@@ -37,7 +37,7 @@ func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 		return
 	}
 
-	accountData, errGetAccount := account.ReadAccountFromCookie(cookie, rdb)
+	accountData, errGetAccount := account.ReadAccountFromCookie(cookie)
 
 	if errGetAccount != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
@@ -160,7 +160,7 @@ func HandleSettings(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 		valuesToChange["avatar"] = nil
 	}
 
-	tx, err := db.Begin()
+	tx, err := sqlDb.MySqlDB.Begin()
 
 	defer func(tx *sql.Tx) {
 		if answer["success"] == false {

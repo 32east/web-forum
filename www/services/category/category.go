@@ -1,13 +1,13 @@
 package category
 
 import (
-	"database/sql"
 	"log"
+	"web-forum/system/sqlDb"
 )
 
-func GetForums(db *sql.DB) (*[]interface{}, error) {
+func GetForums() (*[]interface{}, error) {
 	var forums []interface{}
-	rows, err := db.Query("SELECT * FROM `forums`;")
+	rows, err := sqlDb.MySqlDB.Query("SELECT * FROM `forums`;")
 
 	if err != nil {
 		log.Fatal(err)

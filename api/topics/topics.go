@@ -2,19 +2,21 @@ package topics
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"github.com/redis/go-redis/v9"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
+	"unicode/utf8"
 	"web-forum/api/auth"
-	"web-forum/api/message"
 	"web-forum/internal"
+	"web-forum/system/redisDb"
+	"web-forum/system/sqlDb"
+	"web-forum/www/handlers"
 	"web-forum/www/services/account"
 )
 
-func HandleMessage(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
+func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := auth.PrepareHandle(writer)
 	defer func() {
 		if !answer["success"].(bool) {
@@ -32,7 +34,7 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request, db *sql.DB
 		return
 	}
 
-	login, ok := rdb.Get(context.Background(), "AToken:"+cookie.Value).Result()
+	login, ok := redisDb.RedisDB.Get(context.Background(), "AToken:"+cookie.Value).Result()
 
 	if ok != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
@@ -61,16 +63,17 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request, db *sql.DB
 	}
 
 	topicId, message := jsonData["topic_id"], jsonData["message"]
-	_, rowErr := db.Query("SELECT id FROM topics WHERE id = ?", topicId)
+
+	_, rowErr := sqlDb.MySqlDB.Query("SELECT id FROM topics WHERE id = ?", topicId)
 
 	if rowErr != nil {
-		answer["success"], answer["reason"] = false, "topic not found"
+		answer["success"], answer["reason"] = false, "topics-messages not found"
 
 		return
 	}
 
 	accountId := accInfo.Id
-	_, queryErr := db.Exec("INSERT INTO `messages` (id, topic_id, account_id, message, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, NULL)", topicId, accountId, message, time.Now())
+	_, queryErr := sqlDb.MySqlDB.Exec("INSERT INTO `messages` (id, topic_id, account_id, message, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, NULL)", topicId, accountId, message, time.Now())
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, queryErr.Error()
@@ -78,14 +81,18 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request, db *sql.DB
 		return
 	}
 
+	go func() {
+		sqlDb.MySqlDB.Exec("UPDATE `topics` SET message_count = message_count + 1 WHERE id = ?", topicId)
+	}()
+
 	answer["success"] = true
 }
 
-func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
+func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := auth.PrepareHandle(writer)
 	defer func() {
 		if !answer["success"].(bool) {
-			log.Println(string(reader.RemoteAddr) + " > on topic create: " + answer["reason"].(string))
+			log.Println(string(reader.RemoteAddr) + " > on topics-messages create: " + answer["reason"].(string))
 		}
 	}()
 
@@ -99,7 +106,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sq
 		return
 	}
 
-	login, ok := rdb.Get(context.Background(), "AToken:"+cookie.Value).Result()
+	login, ok := redisDb.RedisDB.Get(context.Background(), "AToken:"+cookie.Value).Result()
 
 	if ok != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
@@ -124,7 +131,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sq
 	}
 
 	name, msg, categoryId, accountId := topic["name"], topic["message"], topic["category_id"], accInfo.Id
-	_, rowErr := db.Query("SELECT id FROM forums WHERE id = ?;", categoryId)
+	_, rowErr := sqlDb.MySqlDB.Query("SELECT id FROM forums WHERE id = ?;", categoryId)
 
 	if rowErr != nil {
 		answer["success"], answer["reason"] = false, "category not found"
@@ -132,8 +139,24 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sq
 		return
 	}
 
+	convertToByte := []byte(name)
+	utf8count := 0
+
+	for len(convertToByte) > 0 {
+		_, size := utf8.DecodeRune(convertToByte)
+		utf8count += 1
+
+		if utf8count >= 128 {
+			answer["success"], answer["reason"] = false, fmt.Errorf("max limit of topics-messages name is 128")
+
+			return
+		}
+
+		convertToByte = convertToByte[size:]
+	}
+
 	currentTime := time.Now()
-	rows, queryErr := db.Exec("INSERT INTO `topics` (id, forum_id, topic_name, topic_message, created_by, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, ?, NULL)", categoryId, name, msg, accountId, currentTime)
+	rows, queryErr := sqlDb.MySqlDB.Exec("INSERT INTO `topics` (id, forum_id, topic_name, created_by, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, NULL)", categoryId, name, accountId, currentTime)
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, queryErr.Error()
@@ -148,8 +171,16 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request, db *sq
 		return
 	}
 
-	newTopicObject := internal.Topic{Id: int(lastInsertId), Name: name, Message: msg, Creator: accountId, CreateTime: currentTime}
-	redirect := message.CreateTopic(newTopicObject, db, rdb)
+	_, queryErr = sqlDb.MySqlDB.Exec("INSERT INTO `messages` (id, topic_id, account_id, message, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, NULL)", lastInsertId, accountId, msg, currentTime)
+
+	if queryErr != nil {
+		answer["success"], answer["reason"] = false, queryErr.Error()
+
+		return
+	}
+
+	newTopicObject := internal.Topic{Id: int(lastInsertId), Name: name, Creator: accountId, CreateTime: currentTime}
+	redirect := handlers.CreateTopic(newTopicObject)
 
 	answer["success"], answer["redirect"] = true, redirect
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"web-forum/system/redisDb"
 	"web-forum/www/services/account"
 )
 
@@ -20,7 +19,7 @@ func HandleBase(stdRequest *http.Request, writer *http.ResponseWriter) (*map[str
 		return &infoToSend, accountData
 	}
 
-	accountData, errGetAccount := account.ReadAccountFromCookie(cookie, redisDb.RedisDB)
+	accountData, errGetAccount := account.ReadAccountFromCookie(cookie)
 
 	if errGetAccount != nil {
 		return &infoToSend, accountData

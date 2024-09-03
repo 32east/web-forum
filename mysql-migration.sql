@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS `topics` (
     id INT PRIMARY KEY AUTO_INCREMENT,
     forum_id INT NOT NULL,
     topic_name TEXT NOT NULL,
-    topic_message TEXT NOT NULL,
     created_by INT NOT NULL,
     create_time DATETIME NOT NULL,
     update_time DATETIME,
+    message_count INT NOT NULL DEFAULT 0,
     FOREIGN KEY (created_by) REFERENCES users(id),
     FOREIGN KEY (forum_id) REFERENCES forums(id)
 );

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
 	"os"
+	"time"
 )
 
 var MySqlDB *sql.DB
@@ -19,18 +20,22 @@ func ConnectDatabase() *sql.DB {
 		ParseTime:            true,
 	}
 
-	Database, err := sql.Open("mysql", config.FormatDSN())
+	db, err := sql.Open("mysql", config.FormatDSN())
 
 	if err != nil {
 		panic(err)
 	}
 
-	err = Database.Ping()
+	err = db.Ping()
 
 	if err != nil {
 		panic(err)
 	}
 
-	MySqlDB = Database
-	return Database
+	db.SetConnMaxLifetime(time.Second * 5)
+	db.SetMaxIdleConns(0)
+	db.SetMaxOpenConns(151)
+
+	MySqlDB = db
+	return db
 }

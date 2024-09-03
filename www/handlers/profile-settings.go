@@ -8,11 +8,11 @@ import (
 func HandleProfileSettings(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
 	infoToSend, account := HandleBase(stdRequest, stdWriter)
 	authorized := (*infoToSend)["Authorized"]
-	defer templates.IndexTemplate.Execute(*stdWriter, infoToSend)
+	defer templates.Index.Execute(*stdWriter, infoToSend)
 
 	if !authorized.(bool) {
 		(*infoToSend)["Title"] = "Нет доступа"
-		templates.ContentAdd(infoToSend, templates.ProfileSettingsTemplate, nil)
+		templates.ContentAdd(infoToSend, templates.ProfileSettings, nil)
 		return
 	}
 
@@ -35,5 +35,5 @@ func HandleProfileSettings(stdWriter *http.ResponseWriter, stdRequest *http.Requ
 		contentToAdd["Avatar"] = account.Avatar.String
 	}
 
-	templates.ContentAdd(infoToSend, templates.ProfileSettingsTemplate, contentToAdd)
+	templates.ContentAdd(infoToSend, templates.ProfileSettings, contentToAdd)
 }

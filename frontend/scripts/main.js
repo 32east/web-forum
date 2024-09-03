@@ -158,8 +158,58 @@ window.onload = function() {
     }
 
     const loginForm = document.querySelector('.login-form');
-    const loginBtn = document.querySelector('#login-btn');
+    const registerBtn = document.querySelector('#register-btn');
     const errorMsg = document.querySelector('#error-msg');
+
+    if (registerBtn) {
+        let btn_activated = false;
+
+        registerBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (btn_activated) { return }
+            const login = loginForm.querySelector('input[name="login"]').value;
+            const password = loginForm.querySelector('input[name="password"]').value;
+            const username = loginForm.querySelector('input[name="username"]').value;
+            const email = loginForm.querySelector('input[name="email"]').value;
+
+            const formData = new FormData();
+            formData.append('login', login);
+            formData.append('password', password);
+            formData.append('username', username);
+            formData.append('email', email);
+
+            btn_activated = true
+            fetch('/api/register', {
+                method: 'POST',
+                body: formData,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        btn_activated = false
+                        throw new Error('Произошла ошибка на стороне сервера.');
+                    }
+
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data.success === false) {
+                        btn_activated = false
+                        errorMsg.textContent = data.reason;
+                    } else {
+                        errorMsg.textContent = "Вы успешно зарегистрировались! Сейчас мы перенаправим вам на страницу с авторизацией..."
+                        setInterval(function() {
+                            window.location.href = "/login"
+                        }, 1500)
+                    }
+                })
+                .catch((error) => {
+                    btn_activated = false
+                    errorMsg.textContent = 'Произошла ошибка на стороне сервера.';
+                });
+        });
+    }
+
+    const loginBtn = document.querySelector('#login-btn');
 
     if (loginBtn) {
         loginBtn.addEventListener('click', (e) => {
@@ -202,12 +252,12 @@ window.onload = function() {
 
             const errorMsg = document.getElementById("error-msg")
             const message = document.getElementById('message-textarea').value;
-            const topicId = document.location.href.split('/').pop();
+            let topicId = document.location.href.split('/');
 
             fetch('/api/send-message', {
                 method: 'POST',
                 body: JSON.stringify({
-                    topic_id: Number(topicId),
+                    topic_id: Number(topicId[topicId.length - 2]),
                     message: message
                 }),
             })

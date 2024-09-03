@@ -7,11 +7,14 @@ import (
 	"web-forum/www"
 )
 
+// TODO: Позже сделать обработчик, что если access_token уже устаревший, то гляди на refresh_token.
+// TODO: Если и refresh_token устаревший, то всё пизда.
+
 func main() {
 	system.RegisterEnvironment()
 
-	db := sqlDb.ConnectDatabase()
-	rdb := redisDb.ConnectToRedis()
+	sqlDb.ConnectDatabase()
+	redisDb.ConnectToRedis()
 
-	www.RegisterURLs(db, rdb)
+	www.RegisterURLs()
 }

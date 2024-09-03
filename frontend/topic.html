@@ -1,0 +1,71 @@
+<div class="forum-list">
+    <h2>{{ .topic_name }}</h2>
+
+    <ul>
+        {{ range .messages }}
+        <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
+            <div style="display: flex;">
+                {{ if .avatar }}
+                    <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                {{ else }}
+                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                {{ end }}
+
+                <div>
+                    <span style="font-size: 20px;">{{ .username }}</span> <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .create_time }}</span>
+                    <br>
+                    <span style="white-space: pre-line;">{{ .message }}</span>
+                </div>
+            </div>
+
+            {{ if .sign_text }}
+                <div class="sign-container">
+                    <span>{{ .sign_text }}</span>
+                </div>
+            {{ end }}
+        </li>
+        {{ end }}
+    </ul>
+
+    <label>
+        {{ if .call_paginator }}
+        <div class="paginator-and-text-container">
+            {{ if .Authorized }}
+            <span> Введите своё сообщение: </span>
+            {{ end }}
+
+            {{ if .call_paginator }}
+            <div class="paginator-container">
+                {{ if .paginator_left }}
+                <a class="paginator-button" href="/./topics/{{ $.topic_id }}/?page={{ .paginator_left }}">‹</a>
+                {{ else }}
+                <a class="paginator-button paginator-block">‹</a>
+                {{ end }}
+
+                {{ range .paginator }}
+                <a class="paginator-button" href="/./topics/{{ $.topic_id }}/?page={{ . }}">{{ . }}</a>
+                {{ end }}
+
+                {{ if .paginator_right }}
+                <a class="paginator-button" href="/./topics/{{ $.topic_id }}/?page={{ .paginator_right }}">›</a>
+                {{ else }}
+                <a class="paginator-button paginator-block">›</a>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+        {{ else }}
+            {{ if .Authorized }}
+            <span> Введите своё сообщение: </span>
+            {{ end }}
+        {{ end }}
+        {{ if .Authorized }}
+        <textarea class="message-textarea" id="message-textarea"></textarea>
+        {{ end }}
+    </label>
+    {{ if .Authorized }}
+    <br>
+    <button id="send-message">Отправить</button>
+    <div id="error-msg"></div>
+    {{ end }}
+</div>

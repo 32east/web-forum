@@ -8,7 +8,7 @@ import (
 func HandleRegisterPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
 	infoToSend, _ := HandleBase(stdRequest, stdWriter)
 	(*infoToSend)["Title"] = "Регистрация"
-	defer templates.IndexTemplate.Execute(*stdWriter, infoToSend)
+	defer templates.Index.Execute(*stdWriter, infoToSend)
 
-	templates.ContentAdd(infoToSend, templates.RegisterTemplate, nil)
+	templates.ContentAdd(infoToSend, templates.RegisterPage, nil)
 }

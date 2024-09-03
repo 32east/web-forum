@@ -10,13 +10,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt"
-	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
 	"net/mail"
 	"strings"
 	"time"
 	"web-forum/internal"
+	"web-forum/system/redisDb"
+	"web-forum/system/sqlDb"
 	"web-forum/www/services/account"
 )
 
@@ -30,7 +31,7 @@ func CheckForSpecialCharacters(str string) bool {
 	return countSpecialCharacters > 0
 }
 
-func GenerateNewJWTToken(login string, additional_param string) (string, error) {
+func GenerateNewJWTToken(login string, additionalParam string) (string, error) {
 	randomBytes := make([]byte, 16)
 	_, err := rand.Read(randomBytes)
 
@@ -40,8 +41,7 @@ func GenerateNewJWTToken(login string, additional_param string) (string, error) 
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username":   login,
-		"additional": additional_param,
-		"rand":       randomBytes,
+		"additional": additionalParam,
 	})
 
 	tokenStr, err := token.SignedString(internal.HmacSecret)
@@ -73,10 +73,10 @@ func IsLoginAndPasswordLegalForActions(loginStr string, passwordStr string) (boo
 	return success, reason
 }
 
-func CheckValueInDatabase(db *sql.DB, sendError chan error, key string, value string) {
+func CheckValueInDatabase(tx *sql.Tx, sendError chan error, key string, value string) {
 	existsValue := ""
 
-	queryRow := db.QueryRow("SELECT ? FROM `users` WHERE ? = ?;", key, key, value)
+	queryRow := tx.QueryRow("SELECT ? FROM `users` WHERE ? = ?;", key, key, value)
 	err := queryRow.Scan(&existsValue)
 
 	if existsValue != "" {
@@ -88,7 +88,7 @@ func CheckValueInDatabase(db *sql.DB, sendError chan error, key string, value st
 	sendError <- nil
 }
 
-func HandleRegister(writer *http.ResponseWriter, reader *http.Request, db *sql.DB) {
+func HandleRegister(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := PrepareHandle(writer)
 	defer newJSONEncoder.Encode(answer)
 
@@ -113,9 +113,18 @@ func HandleRegister(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 
 	receiveError := make(chan error)
 
-	go CheckValueInDatabase(db, receiveError, "login", loginStr)
-	go CheckValueInDatabase(db, receiveError, "email", email)
-	go CheckValueInDatabase(db, receiveError, "username", username)
+	txToCheck, errTx := sqlDb.MySqlDB.Begin()
+	defer txToCheck.Commit()
+
+	if errTx != nil {
+		answer["success"], answer["reason"] = false, errTx.Error()
+
+		return
+	}
+
+	go CheckValueInDatabase(txToCheck, receiveError, "login", loginStr)
+	go CheckValueInDatabase(txToCheck, receiveError, "email", email)
+	go CheckValueInDatabase(txToCheck, receiveError, "username", username)
 
 	workersCount := 3
 
@@ -163,7 +172,7 @@ func HandleRegister(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 
 	accountCreateTime := time.Now()
 
-	_, dbErr := db.Exec("REPLACE INTO `users` (login, password, username, email, created_at) VALUES (?, ?, ?, ?, ?);",
+	_, dbErr := sqlDb.MySqlDB.Exec("REPLACE INTO `users` (login, password, username, email, created_at) VALUES (?, ?, ?, ?, ?);",
 		loginStr,
 		hexPassword,
 		username,
@@ -179,7 +188,7 @@ func HandleRegister(writer *http.ResponseWriter, reader *http.Request, db *sql.D
 	answer["success"] = true
 }
 
-func HandleLogin(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
+func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := PrepareHandle(writer)
 
 	defer func() {
@@ -225,7 +234,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, 
 		return
 	}
 
-	rdbGet := rdb.Get(ctx, loginStr)
+	rdbGet := redisDb.RedisDB.Get(ctx, loginStr)
 	val, errRdbGet := rdbGet.Result()
 
 	// Эта проверка возможно никогда не будет срабатывать.
@@ -274,7 +283,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, 
 		return
 	}
 
-	errATokenSet := rdb.Set(ctx, "AToken:"+accessToken, loginStr, time.Hour*12)
+	errATokenSet := redisDb.RedisDB.Set(ctx, "AToken:"+accessToken, loginStr, time.Hour*12)
 
 	if errATokenSet.Err() != nil {
 		// Если что можно будет добавить обработчик в базу данных.
@@ -284,7 +293,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, 
 		return
 	}
 
-	errRTokenSet := rdb.Set(ctx, "RToken:"+refreshToken, loginStr, time.Hour*72)
+	errRTokenSet := redisDb.RedisDB.Set(ctx, "RToken:"+refreshToken, loginStr, time.Hour*72)
 
 	if errRTokenSet.Err() != nil {
 		answer["success"], answer["reason"] = false, errATokenSet.Err().Error()
@@ -305,7 +314,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, 
 		return
 	}
 
-	setErr := rdb.Set(ctx, loginStr, string(marshal), time.Hour*12)
+	setErr := redisDb.RedisDB.Set(ctx, loginStr, string(marshal), time.Hour*12)
 	redisQueryErr := setErr.Err()
 
 	if redisQueryErr != nil {
@@ -336,7 +345,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, 
 	})
 }
 
-func HandleLogout(writer *http.ResponseWriter, reader *http.Request, db *sql.DB, rdb *redis.Client) {
+func HandleLogout(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := PrepareHandle(writer)
 	defer newJSONEncoder.Encode(answer)
 
@@ -354,7 +363,7 @@ func HandleLogout(writer *http.ResponseWriter, reader *http.Request, db *sql.DB,
 		return
 	}
 
-	loginStr, errRdbGet := rdb.Get(ctx, "AToken:"+cookie.Value).Result()
+	loginStr, errRdbGet := redisDb.RedisDB.Get(ctx, "AToken:"+cookie.Value).Result()
 
 	if errRdbGet != nil {
 		answer["success"], answer["reason"] = false, "invalid atoken"
@@ -362,7 +371,7 @@ func HandleLogout(writer *http.ResponseWriter, reader *http.Request, db *sql.DB,
 		return
 	}
 
-	mapWithAccessAndRefreshToken, mapRdbErr := rdb.Get(ctx, loginStr).Result()
+	mapWithAccessAndRefreshToken, mapRdbErr := redisDb.RedisDB.Get(ctx, loginStr).Result()
 
 	if mapRdbErr != nil {
 		answer["success"], answer["reason"] = false, mapRdbErr.Error()
@@ -389,9 +398,9 @@ func HandleLogout(writer *http.ResponseWriter, reader *http.Request, db *sql.DB,
 	delete(account.CachedAccounts, loginStr)
 	delete(account.CachedAccountsById, findAccount.Id)
 
-	rdb.Del(ctx, loginStr)
-	rdb.Del(ctx, "AToken:"+buffer["access_token"])
-	rdb.Del(ctx, "RToken:"+buffer["refresh_token"])
+	redisDb.RedisDB.Del(ctx, loginStr)
+	redisDb.RedisDB.Del(ctx, "AToken:"+buffer["access_token"])
+	redisDb.RedisDB.Del(ctx, "RToken:"+buffer["refresh_token"])
 
 	http.SetCookie(*writer, &http.Cookie{
 		Name:   "access_token",

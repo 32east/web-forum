@@ -15,7 +15,7 @@
         {{ else }}
             {{ range .topics}}
             <li class="li-topic-container">
-                <a class="topic-container" href="/./topics/{{ .topic_id }}">
+                <a class="topic-container" href="/./topics/{{ .topic_id }}/">
                     {{ if .avatar }}
                     <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">
                     {{ else }}
@@ -25,7 +25,9 @@
                     <div>
                         <span style="font-size: 24px;">{{ .topic_name }}</span>
                         <br>
-                        <span>Создал: {{ .username }} в {{ .create_time }}</span>
+                        <span>Создал: {{ .username }}</span> <span style="color: rgb(200, 200, 200);">в {{ .create_time }}</span>
+                        <br>
+                        <span>Сообщений в теме: {{ .message_count }}</span>
                     </div>
                 </a>
             </li>
@@ -33,19 +35,21 @@
         {{ end }}
     </ul>
 
-    {{ if .paginator_left }}
-    <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_left }}">‹</a>
-    {{ else }}
-    <a class="paginator-button paginator-block">‹</a>
-    {{ end }}
+    {{ if .call_paginator }}
+        {{ if .paginator_left }}
+        <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_left }}">‹</a>
+        {{ else }}
+        <a class="paginator-button paginator-block">‹</a>
+        {{ end }}
 
-    {{ range .paginator }}
-        <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ . }}">{{ . }}</a>
-    {{ end }}
+        {{ range .paginator }}
+            <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ . }}">{{ . }}</a>
+        {{ end }}
 
-    {{ if .paginator_right }}
-    <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_right }}">›</a>
-    {{ else }}
-    <a class="paginator-button paginator-block">›</a>
+        {{ if .paginator_right }}
+        <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_right }}">›</a>
+        {{ else }}
+        <a class="paginator-button paginator-block">›</a>
+        {{ end }}
     {{ end }}
 </div>

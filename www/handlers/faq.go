@@ -8,7 +8,7 @@ import (
 func HandleFAQPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
 	infoToSend, _ := HandleBase(stdRequest, stdWriter)
 	(*infoToSend)["Title"] = "FAQ"
-	defer templates.IndexTemplate.Execute(*stdWriter, infoToSend)
+	defer templates.Index.Execute(*stdWriter, infoToSend)
 
-	templates.ContentAdd(infoToSend, templates.FAQTemplate, nil)
+	templates.ContentAdd(infoToSend, templates.FAQ, nil)
 }

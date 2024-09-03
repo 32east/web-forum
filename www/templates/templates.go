@@ -7,7 +7,7 @@ import (
 )
 
 func ParseFiles(page string) (*template.Template, error) {
-	return template.ParseFiles(page, "frontend/template/not-authorized.html")
+	return template.ParseFiles(page, "frontend/not-authorized.html", "frontend/topic-textarea.html")
 }
 
 func ContentAdd(infoToSend *map[string]interface{}, tmpl *template.Template, content any) {
@@ -22,13 +22,13 @@ func ContentAdd(infoToSend *map[string]interface{}, tmpl *template.Template, con
 	(*infoToSend)["Content"] = template.HTML(newBytesBuffer.String())
 }
 
-var IndexTemplate = template.Must(ParseFiles("frontend/template/index.html"))
-var LoginTemplate = template.Must(ParseFiles("frontend/template/login.html"))
-var RegisterTemplate = template.Must(ParseFiles("frontend/template/register.html"))
-var ProfileSettingsTemplate = template.Must(ParseFiles("frontend/template/profile-settings.html"))
-var ForumTemplate = template.Must(ParseFiles("frontend/template/forum.html"))
-var TopicsTemplate = template.Must(ParseFiles("frontend/template/topics.html"))
-var TopicTemplate = template.Must(ParseFiles("frontend/template/topic.html"))
-var CreateNewTopicTemplate = template.Must(ParseFiles("frontend/template/create-new-topic.html"))
-var FAQTemplate = template.Must(ParseFiles("frontend/template/faq.html"))
-var UsersTemplate = template.Must(ParseFiles("frontend/template/users.html"))
+var Index = template.Must(ParseFiles("frontend/index.html"))
+var LoginPage = template.Must(ParseFiles("frontend/login.html"))
+var RegisterPage = template.Must(ParseFiles("frontend/register.html"))
+var ProfileSettings = template.Must(ParseFiles("frontend/profile-settings.html"))
+var Forum = template.Must(ParseFiles("frontend/forum.html"))
+var Topics = template.Must(ParseFiles("frontend/topics.html"))
+var TopicPage = template.Must(ParseFiles("frontend/topic.html"))
+var CreateNewTopic = template.Must(ParseFiles("frontend/create-new-topic.html"))
+var FAQ = template.Must(ParseFiles("frontend/faq.html"))
+var Users = template.Must(ParseFiles("frontend/users.html"))

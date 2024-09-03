@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"net/http"
 	"time"
+	"web-forum/system/redisDb"
 	"web-forum/system/sqlDb"
 )
 
@@ -28,9 +28,9 @@ type Account struct {
 var CachedAccounts = make(map[string]Account)
 var CachedAccountsById = make(map[int]*Account)
 
-func ReadAccountFromCookie(cookie *http.Cookie, rdb *redis.Client) (*Account, error) {
+func ReadAccountFromCookie(cookie *http.Cookie) (*Account, error) {
 	account := &Account{}
-	login, err := rdb.Get(context.Background(), "AToken:"+cookie.Value).Result()
+	login, err := redisDb.RedisDB.Get(context.Background(), "AToken:"+cookie.Value).Result()
 
 	if err != nil {
 		return account, err
