@@ -5,8 +5,8 @@ import (
 	"web-forum/www/templates"
 )
 
-func HandleUsersPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, _ := HandleBase(stdRequest, stdWriter)
+func UsersPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
+	infoToSend, _ := Base(stdRequest, stdWriter)
 	(*infoToSend)["Title"] = "Юзеры"
 	defer templates.Index.Execute(*stdWriter, infoToSend)
 

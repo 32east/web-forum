@@ -2,7 +2,7 @@
 <div class="forum-list">
     <h2>Настройки профиля</h2>
 
-    <div style="width: fit-content;">
+    <div style="width: auto;">
         {{ if .Email }}
     <label class="profile-settings-label">
         Текущая электронная почта: {{ .Email }}
@@ -16,7 +16,7 @@
 
     <label class="profile-settings-label">
         Введите ваше описание:
-        <input class="left-right-5px" placeholder="Описание" {{ if .Description }} value="{{ .Description }}" {{ end }}>
+            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="Текст описания" id="description" name="description">{{ if .Description }}{{ .Description }}{{ end }}</textarea>
     </label>
 
         <label class="profile-settings-label">

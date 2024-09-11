@@ -1,24 +1,27 @@
 package topics
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"time"
-	"unicode/utf8"
 	"web-forum/api/auth"
 	"web-forum/internal"
-	"web-forum/system/sqlDb"
+	"web-forum/system"
+	"web-forum/system/db"
 	"web-forum/www/handlers"
 	"web-forum/www/services/account"
 )
 
+var ctx = context.Background()
+
 func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := auth.PrepareHandle(writer)
+
+	const errFunction = "HandleMessage"
 	defer func() {
 		if !answer["success"].(bool) {
-			log.Println(string(reader.RemoteAddr) + " > on message send: " + answer["reason"].(string))
+			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
 		}
 	}()
 
@@ -32,7 +35,7 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	accInfo, tokenErr := account.ReadAccountFromCookie(cookie)
+	accInfo, tokenErr := account.ReadFromCookie(cookie)
 
 	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
@@ -54,17 +57,31 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 	}
 
 	topicId, message := jsonData["topic_id"], jsonData["message"]
+	scanTopicId := -1
 
-	_, rowErr := sqlDb.MySqlDB.Query("SELECT id FROM topics WHERE id = ?", topicId)
+	row := db.Postgres.QueryRow(ctx, "SELECT id FROM topics WHERE id = $1;", topicId).Scan(&scanTopicId)
 
-	if rowErr != nil {
-		answer["success"], answer["reason"] = false, "topics-messages not found"
-
+	if row != nil {
+		answer["success"], answer["reason"] = false, "topic not founded"
 		return
 	}
 
+	msgInsert := internal.FormatString(message.(string))
+
 	accountId := accInfo.Id
-	_, queryErr := sqlDb.MySqlDB.Exec("INSERT INTO `messages` (id, topic_id, account_id, message, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, NULL)", topicId, accountId, message, time.Now())
+	tx, err := db.Postgres.Begin(ctx)
+	defer func() {
+		if !answer["success"].(bool) {
+			tx.Rollback(ctx)
+		}
+	}()
+
+	if err != nil {
+		answer["success"], answer["reason"] = false, err.Error()
+		return
+	}
+
+	_, queryErr := tx.Exec(ctx, `insert into messages(topic_id, account_id, message, create_time, update_time) values ($1, $2, $3, current_timestamp, NULL)`, topicId, accountId, msgInsert)
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, queryErr.Error()
@@ -72,18 +89,32 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	go func() {
-		sqlDb.MySqlDB.Exec("UPDATE `topics` SET message_count = message_count + 1 WHERE id = ?", topicId)
-	}()
+	_, queryErr = tx.Exec(ctx, "update topics set message_count = message_count + 1 where id = $1;", topicId)
+
+	if queryErr != nil {
+		answer["success"], answer["reason"] = false, queryErr.Error()
+
+		return
+	}
+
+	queryErr = tx.Commit(ctx)
+
+	if queryErr != nil {
+		answer["success"], answer["reason"] = false, queryErr.Error()
+
+		return
+	}
 
 	answer["success"] = true
 }
 
 func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 	newJSONEncoder, answer := auth.PrepareHandle(writer)
+
+	const errFunction = "HandleTopicCreate"
 	defer func() {
 		if !answer["success"].(bool) {
-			log.Println(string(reader.RemoteAddr) + " > on topics-messages create: " + answer["reason"].(string))
+			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
 		}
 	}()
 
@@ -97,7 +128,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	accInfo, tokenErr := account.ReadAccountFromCookie(cookie)
+	accInfo, tokenErr := account.ReadFromCookie(cookie)
 
 	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
@@ -115,55 +146,42 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 	}
 
 	name, msg, categoryId, accountId := topic["name"], topic["message"], topic["category_id"], accInfo.Id
-	_, rowErr := sqlDb.MySqlDB.Query("SELECT id FROM forums WHERE id = ?;", categoryId)
+	scanCategoryId := -1
 
-	if rowErr != nil {
-		answer["success"], answer["reason"] = false, "category not found"
+	row := db.Postgres.QueryRow(context.Background(), "SELECT id FROM forums WHERE id = $1;", categoryId).Scan(&scanCategoryId)
+
+	if row != nil {
+		answer["success"], answer["reason"] = false, "category not founded"
+		return
+	}
+
+	if internal.Utf8Length(name) > 128 {
+		answer["success"], answer["reason"] = false, "name too long"
 
 		return
 	}
 
-	convertToByte := []byte(name)
-	utf8count := 0
+	queryErr := db.Postgres.QueryRow(context.Background(), "INSERT INTO topics (forum_id, topic_name, created_by, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL) returning id;", categoryId, name, accountId)
 
-	for len(convertToByte) > 0 {
-		_, size := utf8.DecodeRune(convertToByte)
-		utf8count += 1
+	lastInsertId := -1
+	errScan := queryErr.Scan(&lastInsertId)
 
-		if utf8count >= 128 {
-			answer["success"], answer["reason"] = false, fmt.Errorf("max limit of topics-messages name is 128")
-
-			return
-		}
-
-		convertToByte = convertToByte[size:]
-	}
-
-	currentTime := time.Now()
-	rows, queryErr := sqlDb.MySqlDB.Exec("INSERT INTO `topics` (id, forum_id, topic_name, created_by, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, NULL)", categoryId, name, accountId, currentTime)
-
-	if queryErr != nil {
-		answer["success"], answer["reason"] = false, queryErr.Error()
+	if errScan != nil {
+		answer["success"], answer["reason"] = false, errScan.Error()
 
 		return
 	}
 
-	lastInsertId, err := rows.LastInsertId()
+	msg = internal.FormatString(msg)
+	_, err2Scan := db.Postgres.Exec(context.Background(), "INSERT INTO messages (topic_id, account_id, message, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL)", lastInsertId, accountId, msg)
 
-	if err != nil {
-		answer["success"], answer["reason"] = false, "last insert id error"
-		return
-	}
-
-	_, queryErr = sqlDb.MySqlDB.Exec("INSERT INTO `messages` (id, topic_id, account_id, message, create_time, update_time) VALUES (NULL, ?, ?, ?, ?, NULL)", lastInsertId, accountId, msg, currentTime)
-
-	if queryErr != nil {
-		answer["success"], answer["reason"] = false, queryErr.Error()
+	if err2Scan != nil {
+		answer["success"], answer["reason"] = false, err2Scan.Error()
 
 		return
 	}
 
-	newTopicObject := internal.Topic{Id: int(lastInsertId), Name: name, Creator: accountId, CreateTime: currentTime}
+	newTopicObject := internal.Topic{Id: lastInsertId, Name: name, Creator: accountId, CreateTime: time.Now()}
 	redirect := handlers.CreateTopic(newTopicObject)
 
 	answer["success"], answer["redirect"] = true, redirect

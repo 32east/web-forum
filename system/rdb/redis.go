@@ -1,4 +1,4 @@
-package redisDb
+package rdb
 
 import (
 	"context"
@@ -13,6 +13,7 @@ func ConnectToRedis() *redis.Client {
 	redisDb, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 
 	if err != nil {
+
 		panic(err)
 	}
 

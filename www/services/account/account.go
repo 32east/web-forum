@@ -1,11 +1,13 @@
 package account
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
-	"web-forum/system/sqlDb"
+	"web-forum/system/db"
+	"web-forum/system/rdb"
 	jwt_token "web-forum/www/services/jwt-token"
 )
 
@@ -15,7 +17,9 @@ type Account struct {
 	Password string
 	Username string
 	Email    string
+	IsAdmin  bool
 
+	Sex         sql.NullString
 	Avatar      sql.NullString
 	Description sql.NullString
 	SignText    sql.NullString
@@ -24,17 +28,27 @@ type Account struct {
 	UpdatedAt sql.NullTime
 }
 
-var CachedAccounts = make(map[string]Account)
-var CachedAccountsById = make(map[int]*Account)
+type FastCacheStruct struct {
+	Account *Account
+	Time    time.Time
+}
 
-func ReadAccountFromCookie(cookie *http.Cookie) (*Account, error) {
-	tokenInfo, tokenErr := jwt_token.GetTokenInfo(cookie.Value)
+var FastCache = make(map[int]FastCacheStruct)
+
+func ReadFromCookie(cookie *http.Cookie) (*Account, error) {
+	tokenInfo, tokenErr := jwt_token.GetInfo(cookie.Value)
 
 	if tokenErr != nil {
 		return nil, tokenErr
 	}
 
-	accInfo, errGetAccount := GetAccount(tokenInfo["login"].(string))
+	id, ok := tokenInfo["id"].(float64)
+
+	if !ok {
+		return nil, fmt.Errorf("id not int")
+	}
+
+	accInfo, errGetAccount := GetById(int(id))
 
 	if errGetAccount != nil {
 		return nil, errGetAccount
@@ -43,15 +57,28 @@ func ReadAccountFromCookie(cookie *http.Cookie) (*Account, error) {
 	return accInfo, nil
 }
 
-func GetAccountById(id int) (*Account, error) {
-	val, ok := CachedAccountsById[id]
+func GetById(id int) (*Account, error) {
+	veryFastCache, ok := FastCache[id]
 
 	if ok {
-		return val, nil
+		return veryFastCache.Account, nil
+	}
+
+	result, err := rdb.RedisDB.Get(context.Background(), fmt.Sprintf("aID:%d", id)).Result()
+
+	if err == nil {
+		outputAccount, _ := Deserialize(result)
+
+		FastCache[id] = FastCacheStruct{
+			Account: &outputAccount,
+			Time:    time.Now().Add(time.Second * 10),
+		}
+
+		return &outputAccount, nil
 	}
 
 	accountInfo := &Account{}
-	row := sqlDb.MySqlDB.QueryRow("SELECT * FROM `users` WHERE `id` = ?;", id)
+	row := db.Postgres.QueryRow(context.Background(), "SELECT * FROM users WHERE id = $1;", id)
 
 	if row == nil {
 		return accountInfo, fmt.Errorf("Account not found")
@@ -63,6 +90,8 @@ func GetAccountById(id int) (*Account, error) {
 		&accountInfo.Password,
 		&accountInfo.Username,
 		&accountInfo.Email,
+		&accountInfo.IsAdmin,
+		&accountInfo.Sex,
 		&accountInfo.Avatar,
 		&accountInfo.Description,
 		&accountInfo.SignText,
@@ -74,26 +103,19 @@ func GetAccountById(id int) (*Account, error) {
 		return accountInfo, queryErr
 	}
 
-	CachedAccounts[accountInfo.Login] = *accountInfo
-
-	valId, _ := CachedAccounts[accountInfo.Login]
-	CachedAccountsById[accountInfo.Id] = &valId
+	rdb.RedisDB.Set(context.Background(), fmt.Sprintf("aID:%d", accountInfo.Id), accountInfo.Serialize(), time.Hour).Result()
 
 	return accountInfo, nil
 }
 
-func GetAccount(login string) (*Account, error) {
-	val, ok := CachedAccounts[login]
-
-	if ok {
-		return &val, nil
-	}
-
+// GetByLogin
+// Использовать только по крайней необходимости.
+func GetByLogin(login string) (*Account, error) {
 	accountInfo := &Account{}
-	row := sqlDb.MySqlDB.QueryRow("SELECT * FROM `users` WHERE `login` =?;", login)
+	row := db.Postgres.QueryRow(context.Background(), "SELECT * FROM users WHERE login = $1;", login)
 
 	if row == nil {
-		return accountInfo, fmt.Errorf("Account not found")
+		return nil, fmt.Errorf("Account not found")
 	}
 
 	queryErr := row.Scan(
@@ -102,6 +124,8 @@ func GetAccount(login string) (*Account, error) {
 		&accountInfo.Password,
 		&accountInfo.Username,
 		&accountInfo.Email,
+		&accountInfo.IsAdmin,
+		&accountInfo.Sex,
 		&accountInfo.Avatar,
 		&accountInfo.Description,
 		&accountInfo.SignText,
@@ -110,11 +134,8 @@ func GetAccount(login string) (*Account, error) {
 	)
 
 	if queryErr != nil {
-		return accountInfo, queryErr
+		return nil, queryErr
 	}
-
-	CachedAccounts[login] = *accountInfo
-	CachedAccountsById[accountInfo.Id] = accountInfo
 
 	return accountInfo, nil
 }

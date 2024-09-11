@@ -1,35 +1,40 @@
 package topics
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math"
 	"web-forum/internal"
-	"web-forum/system/sqlDb"
+	"web-forum/system/db"
 	"web-forum/www/services/account"
 )
 
-func GetTopics(forumId int, page int) (*internal.Paginator, error) {
+var ctx = context.Background()
+
+func Get(forumId int, page int) (*internal.Paginator, error) {
+	const errorFunction = "topics.Get"
 	var topics internal.Paginator
 
-	tx, err := sqlDb.MySqlDB.Begin()
-	defer tx.Commit()
+	tx, err := db.Postgres.Begin(ctx)
+	defer tx.Commit(ctx)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
 	}
 
 	var topicsCount float64
-	queryRow := tx.QueryRow("SELECT COUNT(*) FROM `topics` WHERE forum_id=?;", forumId)
+	queryRow := tx.QueryRow(ctx, "SELECT COUNT(*) FROM topics WHERE forum_id=$1;", forumId)
 	countTopicsErr := queryRow.Scan(&topicsCount)
 	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorTopics)
 
 	if countTopicsErr != nil {
-		log.Fatal(countTopicsErr)
+		log.Fatal(fmt.Errorf("%s: %w", errorFunction, countTopicsErr))
 	}
 
-	fmtQuery := fmt.Sprintf("SELECT * FROM `topics` WHERE forum_id = ? ORDER BY id LIMIT %d OFFSET %d;", internal.MaxPaginatorTopics, (page-1)*internal.MaxPaginatorTopics)
-	rows, err := tx.Query(fmtQuery, forumId)
+	fmtQuery := fmt.Sprintf("SELECT * FROM topics WHERE forum_id = $1 ORDER BY id DESC LIMIT %d OFFSET %d;", internal.MaxPaginatorTopics, (page-1)*internal.MaxPaginatorTopics)
+	rows, err := tx.Query(ctx, fmtQuery, forumId)
+	defer rows.Close()
 
 	if err != nil {
 		log.Fatal("[functions:35]", err)
@@ -41,7 +46,7 @@ func GetTopics(forumId int, page int) (*internal.Paginator, error) {
 		scanErr := rows.Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount)
 
 		if scanErr != nil {
-			log.Fatal(scanErr)
+			log.Fatal("[functions:46]", scanErr)
 		}
 
 		updateTime := ""
@@ -50,7 +55,7 @@ func GetTopics(forumId int, page int) (*internal.Paginator, error) {
 			updateTime = topic.UpdateTime.Time.Format("2006-01-02 15:04:05")
 		}
 
-		creatorAccount, ok := account.GetAccountById(topic.Creator)
+		creatorAccount, ok := account.GetById(topic.Creator)
 
 		if ok != nil {
 			log.Fatal("фатальная ошибка при получении креатор аккаунта", topic.Creator)

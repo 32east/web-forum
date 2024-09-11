@@ -1,6 +1,7 @@
 package jwt_token
 
 import (
+	"crypto/rand"
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"strconv"
@@ -8,7 +9,32 @@ import (
 	"web-forum/internal"
 )
 
-func GetTokenInfo(token string) (jwt.MapClaims, error) {
+func GenerateNew(accountId int, additionalParam string) (string, error) {
+	randomBytes := make([]byte, 16)
+	_, err := rand.Read(randomBytes)
+
+	if err != nil {
+		return "", err
+	}
+
+	expirationTime := time.Now().Add(time.Hour * 24)
+
+	if additionalParam == "refresh" {
+		expirationTime = time.Now().Add(time.Hour * 72)
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":         accountId,
+		"additional": additionalParam,
+		"expiresAt":  fmt.Sprintf("%d", expirationTime.Unix()),
+	})
+
+	tokenStr, err := token.SignedString(internal.HmacSecret)
+
+	return tokenStr, err
+}
+
+func GetInfo(token string) (jwt.MapClaims, error) {
 	tokenParse, parseErr := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return internal.HmacSecret, nil
 	})

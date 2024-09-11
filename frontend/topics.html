@@ -17,15 +17,15 @@
             <li class="li-topic-container">
                 <a class="topic-container" href="/./topics/{{ .topic_id }}/">
                     {{ if .avatar }}
-                    <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                    <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar a-avatar">
                     {{ else }}
-                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar">
+                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar a-avatar">
                     {{ end }}
 
                     <div>
                         <span style="font-size: 24px;">{{ .topic_name }}</span>
                         <br>
-                        <span>Создал: {{ .username }}</span> <span style="color: rgb(200, 200, 200);">в {{ .create_time }}</span>
+                        <span>Создал: {{ .username }}</span> <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .create_time }}</span>
                         <br>
                         <span>Сообщений в теме: {{ .message_count }}</span>
                     </div>

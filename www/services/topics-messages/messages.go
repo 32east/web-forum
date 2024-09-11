@@ -1,31 +1,40 @@
 package topics_messages
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"math"
 	"time"
 	"web-forum/internal"
-	"web-forum/system/sqlDb"
+	"web-forum/system/db"
 	"web-forum/www/services/account"
 )
 
-func GetMessages(topic internal.Topic, page int) (*internal.Paginator, error) {
-	tx, err := sqlDb.MySqlDB.Begin()
-	defer tx.Commit()
+var ctx = context.Background()
+
+func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
+	const errorFunction = "topics_messages.Get"
+	tx, err := db.Postgres.Begin(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Commit(ctx)
 
 	var topicsCount float64
-	queryRow := tx.QueryRow("SELECT COUNT(*) FROM `messages` WHERE topic_id=?;", topic.Id)
+	queryRow := tx.QueryRow(ctx, "SELECT COUNT(*) FROM messages WHERE topic_id = $1;", topic.Id)
 	countMessagesErr := queryRow.Scan(&topicsCount)
 	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
 
 	if countMessagesErr != nil {
-		log.Fatal(countMessagesErr)
+		log.Fatal(fmt.Errorf("%s: %w", errorFunction, countMessagesErr))
 	}
 
-	fmtQuery := fmt.Sprintf("SELECT * FROM `messages` where topic_id=? LIMIT %d OFFSET %d;", internal.MaxPaginatorMessages, (page-1)*internal.MaxPaginatorMessages)
-	rows, err := tx.Query(fmtQuery, topic.Id)
+	fmtQuery := fmt.Sprintf("SELECT * FROM messages where topic_id=$1 LIMIT %d OFFSET %d;", internal.MaxPaginatorMessages, (page-1)*internal.MaxPaginatorMessages)
+	rows, err := tx.Query(ctx, fmtQuery, topic.Id)
+	defer rows.Close()
 
 	if err != nil {
 		return nil, err
@@ -46,11 +55,11 @@ func GetMessages(topic internal.Topic, page int) (*internal.Paginator, error) {
 
 		rows.Scan(&id, &topicId, &accountId, &message, &createTime, &updateTime)
 
-		getAccount, ok := account.GetAccountById(accountId)
+		getAccount, ok := account.GetById(accountId)
 
 		if ok != nil {
 			// TODO: Создавать нормально транзакцию?
-			sqlDb.MySqlDB.Query("DELETE FROM `messages` WHERE `id`=?;", id)
+			db.Postgres.Exec(ctx, "DELETE FROM messages WHERE id = $1;", id)
 
 			continue
 		}
@@ -60,6 +69,7 @@ func GetMessages(topic internal.Topic, page int) (*internal.Paginator, error) {
 		}
 
 		messageInfo := map[string]interface{}{
+			"uid":         getAccount.Id,
 			"username":    getAccount.Username,
 			"message":     message,
 			"create_time": createTime.Format("2006-01-02 15:04:05"),

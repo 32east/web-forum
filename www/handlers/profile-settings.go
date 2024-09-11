@@ -6,7 +6,7 @@ import (
 )
 
 func HandleProfileSettings(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, account := HandleBase(stdRequest, stdWriter)
+	infoToSend, account := Base(stdRequest, stdWriter)
 	authorized := (*infoToSend)["Authorized"]
 	defer templates.Index.Execute(*stdWriter, infoToSend)
 

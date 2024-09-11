@@ -2,8 +2,9 @@ package main
 
 import (
 	"web-forum/system"
-	"web-forum/system/redisDb"
-	"web-forum/system/sqlDb"
+	"web-forum/system/db"
+	"web-forum/system/rdb"
+	"web-forum/system/timer"
 	"web-forum/www"
 )
 
@@ -13,8 +14,10 @@ import (
 func main() {
 	system.RegisterEnvironment()
 
-	sqlDb.ConnectDatabase()
-	redisDb.ConnectToRedis()
+	db.ConnectDatabase()
+	rdb.ConnectToRedis()
+
+	go timer.Start()
 
 	www.RegisterURLs()
 }

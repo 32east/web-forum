@@ -8,11 +8,11 @@
         {{ else }}
             {{ range .categorys}}
             <li class="li-topic-container">
-                <a class="topic-container" href="/./category/{{ .forum_id }}">
+                <a class="topic-container" href="/./category/{{ .Id }}">
                     <div>
-                        <span style="font-size: 28px;">{{ .forum_name }}</span>
+                        <span style="font-size: 28px;">{{ .Name }}</span>
                         <br>
-                        <span>{{ .forum_description }}</span>
+                        <span>{{ .Description }}</span>
                     </div>
                 </a>
             </li>

@@ -1,8 +1,10 @@
 package www
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"web-forum/api/auth"
 	"web-forum/api/profile"
@@ -12,16 +14,17 @@ import (
 )
 
 func RegisterStaticFiles(path string, urlPath string) {
+	const errorFunction = "RegisterStaticFiles"
 	file, err := os.Open(path)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
 	}
 
 	fileServer, errDirRead := file.Readdir(-1)
 
 	if errDirRead != nil {
-		log.Fatal(errDirRead)
+		log.Fatal(fmt.Errorf("%s: %w", errorFunction, errDirRead))
 	}
 
 	for _, value := range fileServer {
@@ -55,14 +58,14 @@ func RegisterURLs() {
 			return
 		}
 
-		handlers.HandleMainPage(&w, r)
+		handlers.MainPage(&w, r)
 	})
 
-	http.HandleFunc("/faq", func(w http.ResponseWriter, r *http.Request) { handlers.HandleFAQPage(&w, r) })
-	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) { handlers.HandleUsersPage(&w, r) })
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) { handlers.HandleLoginPage(&w, r) })
+	http.HandleFunc("/faq", func(w http.ResponseWriter, r *http.Request) { handlers.FAQPage(&w, r) })
+	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) { handlers.UsersPage(&w, r) })
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) { handlers.LoginPage(&w, r) })
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) { handlers.HandleRegisterPage(&w, r) })
-	http.HandleFunc("/topic/create", func(w http.ResponseWriter, r *http.Request) { handlers.HandleTopicCreate(&w, r) })
+	http.HandleFunc("/topic/create", func(w http.ResponseWriter, r *http.Request) { handlers.TopicCreate(&w, r) })
 	http.HandleFunc("/profile/settings", func(w http.ResponseWriter, r *http.Request) { handlers.HandleProfileSettings(&w, r) })
 
 	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogin(&w, r) })
@@ -72,8 +75,9 @@ func RegisterURLs() {
 	http.HandleFunc("/api/profile/settings", func(w http.ResponseWriter, r *http.Request) { profile.HandleSettings(&w, r) })
 	http.HandleFunc("/api/topics/create", func(w http.ResponseWriter, r *http.Request) { topics.HandleTopicCreate(&w, r) })
 
-	initialize_functions.InitializeForumsPages()
-	initialize_functions.InitializeTopicsPages()
+	initialize_functions.Categorys()
+	initialize_functions.Topics()
+	initialize_functions.Profiles()
 
 	http.ListenAndServe(":80", nil)
 }

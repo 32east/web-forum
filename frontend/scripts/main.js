@@ -40,7 +40,7 @@ window.onload = function() {
         if (username) {
             const originalValues = {
                 username: form.querySelector('input[placeholder="Юзернейм"]').value,
-                description: form.querySelector('input[placeholder="Описание"]').value,
+                description: form.querySelector('textarea[placeholder="Текст описания"]').value,
                 avatar: null,
                 signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
             };
@@ -50,7 +50,7 @@ window.onload = function() {
 
                 const newValues = {
                     username: form.querySelector('input[placeholder="Юзернейм"]').value,
-                    description: form.querySelector('input[placeholder="Описание"]').value,
+                    description: form.querySelector('textarea[placeholder="Текст описания"]').value,
                     avatar: form.querySelector('input[type="file"]').files[0],
                     signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
                 };
@@ -86,7 +86,7 @@ window.onload = function() {
     const select = document.getElementById('categorys');
     const topicNameInput = document.querySelector('input.left-right-5px');
     const topicMessageInput = document.querySelector('textarea.left-right-5px');
-    const saveButton2 = document.getElementById('save-settings');
+    const saveButton2 = document.getElementById('create-topic-btn');
     if (saveButton2) {
         saveButton2.addEventListener('click', (e) => {
             e.preventDefault();

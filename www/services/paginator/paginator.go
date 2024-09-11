@@ -5,7 +5,7 @@ import (
 	"web-forum/internal"
 )
 
-func PaginatorConstruct(paginatorList internal.Paginator) internal.PaginatorConstructed {
+func Construct(paginatorList internal.Paginator) internal.PaginatorConstructed {
 	currentPageInt := paginatorList.CurrentPage
 	ourPages := paginatorList.AllPages
 	howMuchPagesWillBeVisible := internal.HowMuchPagesWillBeVisibleInPaginator

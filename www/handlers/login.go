@@ -5,8 +5,8 @@ import (
 	"web-forum/www/templates"
 )
 
-func HandleLoginPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, _ := HandleBase(stdRequest, stdWriter)
+func LoginPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
+	infoToSend, _ := Base(stdRequest, stdWriter)
 	(*infoToSend)["Title"] = "Авторизация"
 	defer templates.Index.Execute(*stdWriter, infoToSend)
 

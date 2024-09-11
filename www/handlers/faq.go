@@ -5,8 +5,8 @@ import (
 	"web-forum/www/templates"
 )
 
-func HandleFAQPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, _ := HandleBase(stdRequest, stdWriter)
+func FAQPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
+	infoToSend, _ := Base(stdRequest, stdWriter)
 	(*infoToSend)["Title"] = "FAQ"
 	defer templates.Index.Execute(*stdWriter, infoToSend)
 

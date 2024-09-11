@@ -2,23 +2,21 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
-	"log"
 	"net/http"
 	"net/mail"
 	"strings"
 	"time"
 	"web-forum/internal"
-	"web-forum/system/redisDb"
-	"web-forum/system/sqlDb"
+	"web-forum/system"
+	"web-forum/system/db"
+	"web-forum/system/rdb"
+	initialize_functions "web-forum/www/initialize-functions"
 	"web-forum/www/services/account"
+	jwt_token "web-forum/www/services/jwt-token"
 )
 
 var ctx = context.Background()
@@ -29,31 +27,6 @@ func CheckForSpecialCharacters(str string) bool {
 	})
 
 	return countSpecialCharacters > 0
-}
-
-func GenerateNewJWTToken(login string, additionalParam string) (string, error) {
-	randomBytes := make([]byte, 16)
-	_, err := rand.Read(randomBytes)
-
-	if err != nil {
-		return "", err
-	}
-
-	expirationTime := time.Now().Add(time.Hour * 24)
-
-	if additionalParam == "refresh" {
-		expirationTime = time.Now().Add(time.Hour * 72)
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"login":      login,
-		"additional": additionalParam,
-		"expiresAt":  fmt.Sprintf("%d", expirationTime.Unix()),
-	})
-
-	tokenStr, err := token.SignedString(internal.HmacSecret)
-
-	return tokenStr, err
 }
 
 func PrepareHandle(writer *http.ResponseWriter) (*json.Encoder, map[string]interface{}) {
@@ -80,28 +53,20 @@ func IsLoginAndPasswordLegalForActions(loginStr string, passwordStr string) (boo
 	return success, reason
 }
 
-func CheckValueInDatabase(tx *sql.Tx, sendError chan error, key string, value string) {
-	existsValue := ""
-
-	queryRow := tx.QueryRow("SELECT ? FROM `users` WHERE ? = ?;", key, key, value)
-	err := queryRow.Scan(&existsValue)
-
-	if existsValue != "" {
-		sendError <- fmt.Errorf("account with same %s is already exists", key)
-	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		sendError <- err
-	}
-
-	sendError <- nil
-}
-
 func HandleRegister(writer *http.ResponseWriter, reader *http.Request) {
+	const errFunction = "HandleRegister"
+
 	newJSONEncoder, answer := PrepareHandle(writer)
 	defer newJSONEncoder.Encode(answer)
 
+	defer func() {
+		if !answer["success"].(bool) {
+			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
+		}
+	}()
+
 	if reader.Method != "POST" {
 		answer["success"], answer["reason"] = false, "method not allowed"
-
 		return
 	}
 
@@ -114,62 +79,82 @@ func HandleRegister(writer *http.ResponseWriter, reader *http.Request) {
 
 	if !success {
 		answer["success"], answer["reason"] = false, reason
-
 		return
 	}
 
-	receiveError := make(chan error)
+	rows, err := db.Postgres.Query(ctx, `select
+		case when login=$1 then 1 else 0 end,
+       	case when email=$2 then 1 else 0 end,
+       	case when username=$3 then 1 else 0 end
+		from users as u1;`, loginStr, email, username)
 
-	txToCheck, errTx := sqlDb.MySqlDB.Begin()
-	defer txToCheck.Commit()
-
-	if errTx != nil {
-		answer["success"], answer["reason"] = false, errTx.Error()
-
+	if err != nil {
+		answer["success"], answer["reason"] = false, err.Error()
 		return
 	}
 
-	go CheckValueInDatabase(txToCheck, receiveError, "login", loginStr)
-	go CheckValueInDatabase(txToCheck, receiveError, "email", email)
-	go CheckValueInDatabase(txToCheck, receiveError, "username", username)
+	loginFounded, emailFounded, usernameFounded := 0, 0, 0
+	errReason := ""
 
-	workersCount := 3
+	for rows.Next() {
+		errRow := rows.Scan(&loginFounded, &emailFounded, &usernameFounded)
 
-	for errDb := range receiveError {
-		workersCount -= 1
-
-		if workersCount <= 0 {
-			close(receiveError)
-		}
-
-		if errDb != nil {
-			answer["success"], answer["reason"] = false, errDb.Error()
-			close(receiveError)
-
-			return
+		if errRow != nil {
+			errReason = errRow.Error()
+			break
 		}
 	}
 
 	switch {
-	case len(loginStr) < internal.LoginMinLength:
-		answer["success"], answer["reason"] = false, "login is too short"
+	case errReason != "":
+		answer["success"], answer["reason"] = false, "internal server error"
 		return
-	case len(passwordStr) < internal.PasswordMinLength:
+	case loginFounded == 1:
+		answer["success"], answer["reason"] = false, "this login is already registered"
+		return
+	case emailFounded == 1:
+		answer["success"], answer["reason"] = false, "this email is already registered"
+		return
+	case usernameFounded == 1:
+		answer["success"], answer["reason"] = false, "this username is already registered"
+		return
+	}
+
+	loginLen := internal.Utf8Length(loginStr)
+	passwordLen := internal.Utf8Length(passwordStr)
+	usernameLen := internal.Utf8Length(username)
+	emailLen := internal.Utf8Length(email)
+
+	switch {
+	case loginLen < internal.LoginMinLength:
+		answer["success"], answer["reason"] = false, "login too short"
+		return
+	case passwordLen < internal.PasswordMinLength:
 		answer["success"], answer["reason"] = false, "password too short"
 		return
-	case len(username) < internal.UsernameMinLength:
+	case usernameLen < internal.UsernameMinLength:
 		answer["success"], answer["reason"] = false, "username too short"
 		return
-	case len(email) < internal.EmailMinLength:
+	case loginLen > internal.LoginMaxLength:
+		answer["success"], answer["reason"] = false, "login too long"
+		return
+	case passwordLen > internal.PasswordMaxLength:
+		answer["success"], answer["reason"] = false, "password too long"
+		return
+	case usernameLen > internal.UsernameMaxLength:
+		answer["success"], answer["reason"] = false, "username too long"
+		return
+	case emailLen < internal.EmailMinLength:
 		answer["success"], answer["reason"] = false, "email too short"
 		return
-	case username == "settings":
-		answer["success"], answer["reason"] = false, "invalid username"
+	case emailLen > internal.EmailMaxLength:
+		answer["success"], answer["reason"] = false, "username too long"
+		return
+	default:
 	}
 
 	if _, err := mail.ParseAddress(email); err != nil {
 		answer["success"], answer["reason"] = false, "invalid email"
-
 		return
 	}
 
@@ -177,30 +162,33 @@ func HandleRegister(writer *http.ResponseWriter, reader *http.Request) {
 	newSha256Writer.Write([]byte(passwordStr))
 	hexPassword := hex.EncodeToString(newSha256Writer.Sum(nil))
 
-	accountCreateTime := time.Now()
-
-	_, dbErr := sqlDb.MySqlDB.Exec("REPLACE INTO `users` (login, password, username, email, created_at) VALUES (?, ?, ?, ?, ?);",
+	row := db.Postgres.QueryRow(ctx, "INSERT INTO users(login, password, username, email, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) returning id;",
 		loginStr,
 		hexPassword,
 		username,
-		email,
-		accountCreateTime)
+		email)
 
-	if dbErr != nil {
-		answer["success"], answer["reason"] = false, dbErr.Error()
+	var accountId int
+	idErr := row.Scan(&accountId)
 
+	if idErr != nil {
+		answer["success"], answer["reason"] = false, idErr.Error()
 		return
 	}
+
+	initialize_functions.CreateProfilePage(accountId)
 
 	answer["success"] = true
 }
 
+// TODO: Могут насрать запросами, что по итогу выльется в DDOS.
 func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
+	const errFunction = "HandleLogin"
 	newJSONEncoder, answer := PrepareHandle(writer)
 
 	defer func() {
 		if !answer["success"].(bool) {
-			log.Println(string(reader.RemoteAddr) + " > " + answer["reason"].(string))
+			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
 		}
 	}()
 
@@ -223,7 +211,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	accountInfo, queryErr := account.GetAccount(loginStr)
+	accountInfo, queryErr := account.GetByLogin(loginStr)
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, queryErr.Error()+" in query"
@@ -241,7 +229,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	accessToken, errAccess := GenerateNewJWTToken(loginStr, "access")
+	accessToken, errAccess := jwt_token.GenerateNew(accountInfo.Id, "access")
 
 	if errAccess != nil {
 		answer["success"], answer["reason"] = false, errAccess.Error()
@@ -249,7 +237,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	refreshToken, errRefresh := GenerateNewJWTToken(loginStr, "refresh")
+	refreshToken, errRefresh := jwt_token.GenerateNew(accountInfo.Id, "refresh")
 
 	if errRefresh != nil {
 		answer["success"], answer["reason"] = false, errRefresh
@@ -257,7 +245,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	errRTokenSet := redisDb.RedisDB.Set(ctx, "RToken:"+refreshToken, loginStr, time.Hour*72)
+	errRTokenSet := rdb.RedisDB.Set(ctx, "RToken:"+refreshToken, loginStr, time.Hour*72)
 
 	if errRTokenSet.Err() != nil {
 		answer["success"], answer["reason"] = false, errRTokenSet.Err().Error()
@@ -295,21 +283,6 @@ func HandleLogout(writer *http.ResponseWriter, reader *http.Request) {
 
 		return
 	}
-	//
-	//cookie, err := reader.Cookie("access_token")
-	//
-	//if err != nil {
-	//	answer["success"], answer["reason"] = false, "invalid jwt token"
-	//
-	//	return
-	//}
-	//
-	//_, tokenErr := GetTokenInfo(cookie.Value)
-	//
-	//if tokenErr != nil {
-	//	answer["success"], answer["reason"] = false, "couldn't find account"
-	//	return
-	//}
 
 	http.SetCookie(*writer, &http.Cookie{
 		Name:   "access_token",

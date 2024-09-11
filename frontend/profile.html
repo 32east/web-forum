@@ -1,1 +1,42 @@
-jopa
+<div class="forum-list">
+    <div style="display: flex;border: 1px solid rgb(200, 200, 200);padding:10px;">
+        {{ if .ProfileAvatar }}
+        <img src="/./imgs/avatars/{{ .ProfileAvatar }}" loading="lazy" alt="{{ .ProfileUsername }} avatar" class="avatar-in-profile-page">
+        {{ else }}
+        <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .ProfileUsername }} avatar" class="avatar-in-profile-page">
+        {{ end }}
+        <div style="display: block;">
+            <h1 style="margin: 0; font-size: 36px;">{{ .ProfileUsername }}</h1>
+            {{ if .ProfileDescription }}
+                <span style="white-space: pre-line;">{{ .ProfileDescription }}</span>
+            {{ end }}
+            <p>С нами уже: {{ .ProfileCreatedAt }}</p>
+        </div>
+    </div>
+    {{ if .ProfileSignText }}
+    <div style="margin: 10px 0 2px 0;border: 1px solid rgb(200, 200, 200);padding: 5px;overflow: auto;">
+    <p>Личная подпись:</p>
+    <div class="sign-container">
+        <p>{{ .ProfileSignText }}</p>
+    </div>
+    </div>
+    {{ end }}
+    <p style="margin: 10px 0 2px 0">Последние сообщения:</p>
+        <ul>
+            {{ if .ProfileNoMessages }}
+            <p style="margin: 10px 0 2px 0">Данная персона ничего не писала :<</p>
+            {{ else }}
+        {{ range .ProfileMessages }}
+            <a href="/./topics/{{ .TopicId }}">
+                <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
+                    <div>
+                        <span>{{ .TopicName }}</span>
+                        <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .CreateTime }}</span>
+                        <p style="white-space: pre-line;">{{ .Message }}</p>
+                    </div>
+                </li>
+            </a>
+        {{ end }}
+            {{ end }}
+        </ul>
+</div>

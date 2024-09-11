@@ -7,17 +7,32 @@ import (
 )
 
 const SiteName = "Форумчанский"
+
 const LoginMinLength = 4
+const LoginMaxLength = 32
+
 const PasswordMinLength = 8
+const PasswordMaxLength = 64
+
 const EmailMinLength = 4
+const EmailMaxLength = 64
+
 const UsernameMinLength = 4
-const AvatarsFilePath = "frontend/template/imgs/avatars/"
+const UsernameMaxLength = 24
+
+const AvatarsFilePath = "frontend/imgs/avatars/"
 const AvatarsSize = 200.0
 const MaxPaginatorTopics = 10
 const MaxPaginatorMessages = 10
 const HowMuchPagesWillBeVisibleInPaginator = 9 // Только нечётные числа!!!
 
 var HmacSecret = []byte(os.Getenv("HMAC_SECRET"))
+
+type Category struct {
+	Id          int
+	Name        string
+	Description string
+}
 
 type Topic struct {
 	Id           int
@@ -27,6 +42,13 @@ type Topic struct {
 	CreateTime   time.Time
 	UpdateTime   sql.NullTime
 	MessageCount int
+}
+
+type Message struct {
+	TopicId    int
+	TopicName  string
+	Message    string
+	CreateTime string
 }
 
 type Paginator struct {

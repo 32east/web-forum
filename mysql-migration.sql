@@ -1,43 +1,45 @@
-CREATE DATABASE IF NOT EXISTS `web-forum`;
+CREATE DATABASE IF NOT EXISTS web-forum;
 
-CREATE TABLE IF NOT EXISTS `users` (
-	id INT PRIMARY KEY AUTO_INCREMENT,
-	login TEXT NOT NULL,
-	password TEXT NOT NULL,
-	username TEXT NOT NULL,
-	email TEXT NOT NULL,
-	avatar TEXT,
-	description TEXT,
-    sign_text TEXT,
-	created_at DATETIME NOT NULL,
-	updated_at DATETIME
+CREATE TABLE IF NOT EXISTS users (
+	id serial PRIMARY KEY,
+	login VARCHAR(64) NOT NULL,
+	password VARCHAR(64) NOT NULL,
+	username VARCHAR(64) NOT NULL,
+	email VARCHAR(128) NOT NULL,
+    is_admin BOOLEAN NOT NULL,
+    sex CHAR(1),
+    avatar VARCHAR(1024),
+	description VARCHAR(1024),
+    sign_text VARCHAR(1024),
+	created_at TIMESTAMP NOT NULL,
+	updated_at TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS `forums` (
-    id INT PRIMARY KEY,
-    forum_name TEXT,
-    forum_description TEXT
+CREATE TABLE IF NOT EXISTS forums (
+    id serial PRIMARY KEY,
+    forum_name VARCHAR(128),
+    forum_description VARCHAR(2048)
 );
 
-CREATE TABLE IF NOT EXISTS `topics` (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    forum_id INT NOT NULL,
-    topic_name TEXT NOT NULL,
-    created_by INT NOT NULL,
-    create_time DATETIME NOT NULL,
-    update_time DATETIME,
-    message_count INT NOT NULL DEFAULT 0,
+CREATE TABLE IF NOT EXISTS topics (
+    id serial PRIMARY KEY,
+    forum_id INTEGER NOT NULL,
+    topic_name VARCHAR(384) NOT NULL,
+    created_by INTEGER NOT NULL,
+    create_time TIMESTAMP NOT NULL,
+    update_time TIMESTAMP,
+    message_count INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (created_by) REFERENCES users(id),
     FOREIGN KEY (forum_id) REFERENCES forums(id)
 );
 
-CREATE TABLE IF NOT EXISTS `messages` (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    topic_id INT NOT NULL,
-    account_id INT NOT NULL,
+CREATE TABLE IF NOT EXISTS messages (
+    id serial PRIMARY KEY,
+    topic_id INTEGER NOT NULL,
+    account_id INTEGER NOT NULL,
     message TEXT NOT NULL,
-    create_time DATETIME NOT NULL,
-    update_time DATETIME,
+    create_time TIMESTAMP NOT NULL,
+    update_time TIMESTAMP,
     FOREIGN KEY (topic_id) REFERENCES topics(id),
     FOREIGN KEY (account_id) REFERENCES users(id)
 );

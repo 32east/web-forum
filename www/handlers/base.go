@@ -5,7 +5,7 @@ import (
 	"web-forum/www/services/account"
 )
 
-func HandleBase(stdRequest *http.Request, writer *http.ResponseWriter) (*map[string]interface{}, *account.Account) {
+func Base(stdRequest *http.Request, writer *http.ResponseWriter) (*map[string]interface{}, *account.Account) {
 	// go account.TokensRefreshInRedis(stdRequest, writer) // TODO: Расскомент!!!
 
 	infoToSend := make(map[string]interface{})
@@ -19,13 +19,14 @@ func HandleBase(stdRequest *http.Request, writer *http.ResponseWriter) (*map[str
 		return &infoToSend, accountData
 	}
 
-	accountData, errGetAccount := account.ReadAccountFromCookie(cookie)
+	accountData, errGetAccount := account.ReadFromCookie(cookie)
 
 	if errGetAccount != nil {
 		return &infoToSend, accountData
 	}
 
 	infoToSend["Authorized"] = true
+	infoToSend["AccountId"] = accountData.Id
 	infoToSend["Username"] = accountData.Username
 
 	if accountData.Avatar.Valid {

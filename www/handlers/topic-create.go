@@ -13,12 +13,12 @@ import (
 	"web-forum/www/templates"
 )
 
-func HandleTopicCreate(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, _ := HandleBase(stdRequest, stdWriter)
+func TopicCreate(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
+	infoToSend, _ := Base(stdRequest, stdWriter)
 	(*infoToSend)["Title"] = "Создание нового топика"
 	defer templates.Index.Execute(*stdWriter, infoToSend)
 
-	forums, err := category.GetForums()
+	forums, err := category.Get()
 
 	if err != nil {
 		panic(err)
@@ -28,12 +28,11 @@ func HandleTopicCreate(stdWriter *http.ResponseWriter, stdRequest *http.Request)
 	currentCategory := stdRequest.FormValue("category")
 
 	for _, output := range *forums {
-		outputToMap := output.(map[string]interface{})
-		forumId := outputToMap["forum_id"]
+		forumId := output.Id
 
 		categorys = append(categorys, map[string]interface{}{
-			"forum_name":  outputToMap["forum_name"].(string),
-			"forum_id":    outputToMap["forum_id"].(int),
+			"forum_name":  output.Name,
+			"forum_id":    output.Id,
 			"is_selected": fmt.Sprint(forumId) == currentCategory,
 		})
 	}
@@ -43,11 +42,12 @@ func HandleTopicCreate(stdWriter *http.ResponseWriter, stdRequest *http.Request)
 	})
 }
 
+// TODO: Лучше это запихнуть в api/topics.
 func CreateTopic(inputTopic internal.Topic) string {
 	url := "/topics/" + fmt.Sprint(inputTopic.Id) + "/"
 
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-		infoToSend, _ := HandleBase(r, &w)
+		infoToSend, _ := Base(r, &w)
 		(*infoToSend)["Title"] = inputTopic.Name
 		defer templates.Index.Execute(w, infoToSend)
 
@@ -63,9 +63,9 @@ func CreateTopic(inputTopic internal.Topic) string {
 			page = 0
 		}
 
-		paginatorMessages, _ := topics_messages.GetMessages(inputTopic, page)
-		finalPaginator := paginator.PaginatorConstruct(*paginatorMessages)
-		getAccount, ok := account.GetAccountById(inputTopic.Creator)
+		paginatorMessages, _ := topics_messages.Get(inputTopic, page)
+		finalPaginator := paginator.Construct(*paginatorMessages)
+		getAccount, ok := account.GetById(inputTopic.Creator)
 
 		if ok != nil {
 			log.Fatal("фатальная ошибка при получении информации о создателе топика", inputTopic.Creator)

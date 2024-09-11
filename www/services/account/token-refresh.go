@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 	"time"
-	"web-forum/system/redisDb"
+	"web-forum/system/rdb"
 )
 
 func TokensRefreshInRedis(reader *http.Request, writer *http.ResponseWriter) {
-	rdb := redisDb.RedisDB
+	rdb := rdb.RedisDB
 
 	if reader.Referer() != "" {
 		return
