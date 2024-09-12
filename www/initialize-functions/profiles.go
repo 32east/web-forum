@@ -38,8 +38,18 @@ func CreateProfilePage(accountId int) {
 		contentToAdd := map[string]interface{}{
 			"ProfileUsername":  acc.Username,
 			"ProfileCreatedAt": fmt.Sprintf("%d %s", timeWithUs, suffix),
-			"ProfileMessages":  []internal.Message{},
+			"ProfileMessages":  []internal.ProfileMessage{},
 		}
+
+		sex := "Не указан"
+
+		if acc.Sex.String == "m" {
+			sex = "Мужской"
+		} else if acc.Sex.String == "f" {
+			sex = "Женский"
+		}
+
+		contentToAdd["ProfileSex"] = sex
 
 		if acc.SignText.Valid {
 			contentToAdd["ProfileSignText"] = acc.SignText.String
@@ -66,7 +76,7 @@ func CreateProfilePage(accountId int) {
 		}
 
 		for rowsMessages.Next() {
-			msg := internal.Message{}
+			msg := internal.ProfileMessage{}
 			createTime := time.Time{}
 			scanErr := rowsMessages.Scan(&msg.TopicId, &msg.TopicName, &msg.Message, &createTime)
 
@@ -76,14 +86,13 @@ func CreateProfilePage(accountId int) {
 
 			msg.CreateTime = createTime.Format("2006-01-02 15:04:05")
 
-			contentToAdd["ProfileMessages"] = append(contentToAdd["ProfileMessages"].([]internal.Message), msg)
+			contentToAdd["ProfileMessages"] = append(contentToAdd["ProfileMessages"].([]internal.ProfileMessage), msg)
 		}
 
-		if len(contentToAdd["ProfileMessages"].([]internal.Message)) == 0 {
+		if len(contentToAdd["ProfileMessages"].([]internal.ProfileMessage)) == 0 {
 			contentToAdd["ProfileNoMessages"] = true
 		}
 
-		fmt.Println(contentToAdd)
 		templates.ContentAdd(infoToSend, templates.Profile, contentToAdd)
 	})
 }

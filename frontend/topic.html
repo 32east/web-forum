@@ -1,10 +1,10 @@
 <div class="forum-list">
-    <h2>{{ .topic_name }}</h2>
+    <h2 style="overflow-wrap: anywhere;">{{ .topic_name }}</h2>
 
     <ul>
         {{ range .messages }}
         <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
-            <div style="display: flex;">
+            <div style="display: flex; overflow-wrap: anywhere;">
                 <a href="/./profile/{{ .uid }}" class="a-avatar">
                 {{ if .avatar }}
                     <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">

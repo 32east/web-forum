@@ -45,6 +45,15 @@ type Topic struct {
 }
 
 type Message struct {
+	Id         int
+	TopicId    int
+	CreatorId  int
+	Message    string
+	CreateTime time.Time
+	UpdateTime sql.NullTime
+}
+
+type ProfileMessage struct {
 	TopicId    int
 	TopicName  string
 	Message    string

@@ -8,6 +8,7 @@
 body {
     margin: 0;
     padding: 0;
+    overflow-wrap: anywhere;
 }
 
 h1, h2, h3 {
@@ -247,6 +248,7 @@ a {
     width: 100%;
     transition: 0.12s;
     padding: 5px;
+    overflow-wrap: anywhere;
 }
 
 .topic-container:hover {
@@ -316,6 +318,11 @@ a {
     margin: 0 10px 0 0;
 }
 
+.profile-username {
+    margin: 0;
+    font-size: 36px;
+}
+
 @media screen and (max-width: 600px) {
     .forum-button {
         display: none;
@@ -331,5 +338,10 @@ a {
 
     .avatar, .a-avatar {
         max-width: 48px;
+    }
+
+    .profile-username {
+        font-size: 6vw;
+        overflow-wrap: anywhere;
     }
 }

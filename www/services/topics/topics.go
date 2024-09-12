@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"web-forum/internal"
+	"web-forum/system"
 	"web-forum/system/db"
 	"web-forum/www/services/account"
 )
@@ -40,14 +41,27 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 		log.Fatal("[functions:35]", err)
 	}
 
+	var tempUsers []int
+	var tempTopics []internal.Topic
+
 	for rows.Next() {
 		topic := internal.Topic{}
 
 		scanErr := rows.Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount)
 
 		if scanErr != nil {
-			log.Fatal("[functions:46]", scanErr)
+			system.ErrLog(errorFunction, scanErr.Error())
+			continue
 		}
+
+		tempUsers = append(tempUsers, topic.Creator)
+		tempTopics = append(tempTopics, topic)
+	}
+
+	usersInfo := account.GetFromSlice(tempUsers, tx)
+
+	for i := 0; i < len(tempTopics); i++ {
+		topic := tempTopics[i]
 
 		updateTime := ""
 
@@ -55,10 +69,11 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 			updateTime = topic.UpdateTime.Time.Format("2006-01-02 15:04:05")
 		}
 
-		creatorAccount, ok := account.GetById(topic.Creator)
+		creatorAccount, ok := usersInfo[topic.Creator]
 
-		if ok != nil {
-			log.Fatal("фатальная ошибка при получении креатор аккаунта", topic.Creator)
+		if !ok {
+			system.ErrLog("topics.Get", "Не найден креатор топика в БД?")
+			continue
 		}
 
 		aboutTopic := map[string]interface{}{
