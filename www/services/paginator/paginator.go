@@ -1,9 +1,48 @@
 package paginator
 
 import (
+	"context"
+	"fmt"
+	"github.com/jackc/pgx/v5"
+	"log"
 	"math"
 	"web-forum/internal"
+	"web-forum/system/db"
 )
+
+var ctx = context.Background()
+
+func Query(tableName string, columnName string, id int, page int) (tx pgx.Tx, rows pgx.Rows, paginatorMessages internal.Paginator, err error) {
+	const errorFunction = "paginator.Query"
+
+	tx, err = db.Postgres.Begin(ctx)
+
+	if err != nil {
+		return nil, nil, paginatorMessages, err
+	}
+
+	var topicsCount float64
+	fmtQuery := fmt.Sprintf("select count(*) from %s where %s = $1", tableName, columnName)
+	queryRow := tx.QueryRow(ctx, fmtQuery, id)
+	countMessagesErr := queryRow.Scan(&topicsCount)
+	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
+
+	if countMessagesErr != nil {
+		log.Fatal(fmt.Errorf("%s: %w", errorFunction, countMessagesErr))
+	}
+
+	fmtQuery = fmt.Sprintf("select * from %s where %s=$1 LIMIT %d OFFSET %d;", tableName, columnName, internal.MaxPaginatorMessages, (page-1)*internal.MaxPaginatorMessages)
+	rows, err = tx.Query(ctx, fmtQuery, id)
+
+	if err != nil {
+		return nil, nil, paginatorMessages, err
+	}
+
+	paginatorMessages.CurrentPage = page
+	paginatorMessages.AllPages = int(pagesCount)
+
+	return tx, rows, paginatorMessages, nil
+}
 
 func Construct(paginatorList internal.Paginator) internal.PaginatorConstructed {
 	currentPageInt := paginatorList.CurrentPage

@@ -21,8 +21,7 @@ const UsernameMinLength = 4
 const UsernameMaxLength = 24
 
 const AvatarsFilePath = "frontend/imgs/avatars/"
-const AvatarsSize = 200.0
-const MaxPaginatorTopics = 10
+const AvatarsSize = 256.0
 const MaxPaginatorMessages = 10
 const HowMuchPagesWillBeVisibleInPaginator = 9 // Только нечётные числа!!!
 

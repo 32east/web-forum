@@ -94,10 +94,6 @@ func HandleSettings(writer *http.ResponseWriter, reader *http.Request) {
 		}
 
 		valuesToChange["username"] = username
-	} else {
-		answer["success"], answer["reason"] = false, "invalid username"
-
-		return
 	}
 
 	if description != "" {

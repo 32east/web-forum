@@ -8,6 +8,9 @@ window.onload = function() {
 
             const newValues = {
                 avatarRemove: true,
+                username: form.querySelector('input[placeholder="Юзернейм"]').value,
+                description: form.querySelector('textarea[placeholder="Текст описания"]').value,
+                signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
             };
             const formData = new FormData();
 
@@ -122,21 +125,55 @@ window.onload = function() {
         });
     }
 
+    function getCoords(elem) { // crossbrowser version
+        var box = elem.getBoundingClientRect();
+        var body = document.body;
+        var docEl = document.documentElement;
+        var scrollTop = window.pageYOffset || docEl.scrollTop || body.scrollTop;
+        var scrollLeft = window.pageXOffset || docEl.scrollLeft || body.scrollLeft;
+        var clientTop = docEl.clientTop || body.clientTop || 0;
+        var clientLeft = docEl.clientLeft || body.clientLeft || 0;
+        var top  = box.top +  scrollTop - clientTop;
+        var left = box.left + scrollLeft - clientLeft;
+        return { top: Math.round(top), left: Math.round(left) };
+    }
+
     const menu_button = document.getElementById('menu-button');
+
+    const menu = document.getElementById("menu");
+    let showed = false;
 
     if (menu_button) {
         menu_button.addEventListener('click', (e) => {
             e.preventDefault();
 
-            const menu = document.getElementById("menu");
             if (menu.classList.contains("menu-container-open")) {
                 menu_button.classList.remove("account-button-opened")
                 menu.classList.remove("menu-container-open")
+                showed = false;
             } else {
                 menu_button.classList.add("account-button-opened")
                 menu.classList.add("menu-container-open")
+                showed = true;
             }
         })
+
+        let left = getCoords(menu_button).left + menu_button.offsetWidth - 150;
+        let existsTimeout = -1
+
+        window.onresize = function() {
+            left = getCoords(menu_button).left + menu_button.offsetWidth - 150;
+            menu.style.margin = 'auto ' + left + 'px';
+            menu.style.transition = '0s';
+
+            clearTimeout(existsTimeout)
+
+            existsTimeout = setTimeout(function() {
+                menu.style.transition = '0.12s';
+            }, 100)
+        }
+
+        menu.style.margin = 'auto ' + left + 'px';
     }
 
     const logout_button = document.getElementById('logout-button');

@@ -12,26 +12,28 @@
 
 <body>
     <div class="container">
-        <a class="logo" href="/">Форумчанский</a>
-        <nav class="nav-mobile">
-            <ul style="display: flex;">
-                <a class="forum-button" href="/">Главная</a>
-                <a class="forum-button" href="/./users">Юзеры</a>
-                <a class="forum-button" href="/./faq">FAQ</a>
-            </ul>
-        </nav>
+        <div class="in-container noselect">
+                <a class="logo" href="/">Форумчанский</a>
+                <nav class="nav-mobile">
+                    <ul class="ul-container">
+                        <a class="forum-button" href="/./users">Юзеры</a>
+                        <a class="forum-button" href="/./faq">FAQ</a>
+                    </ul>
+                </nav>
 
-        {{ if.Authorized }}
-        <a id="menu-button" class="login-button" style="width: auto; padding: 0 10px; overflow: hidden;">
-            {{ if .Avatar }}
-            <img src="/./imgs/avatars/{{ .Avatar }}" width="24" height="24" alt="avatar" style="object-fit: cover; vertical-align: middle; border-radius: 100%; box-shadow: 0 0 1px black;">
+            {{ if.Authorized }}
+            <a id="menu-button" class="login-button profile-button">
+                {{ if .Avatar }}
+                <img src="/./imgs/avatars/{{ .Avatar }}" width="24" height="24" alt="avatar" style="object-fit: cover; vertical-align: middle; border-radius: 100%; box-shadow: 0 0 1px black;">
+                {{ end }}
+                <span class="nav-mobile">{{ .Username }}</span>
+            </a>
+            {{ else }}
+            <a class="login-button profile-button" href="/./login">Войти</a>
             {{ end }}
-            <span class="nav-mobile">{{ .Username }}</span>
-        </a>
-        {{ else }}
-        <a class="login-button" href="/./login">Войти</a>
-        {{ end }}
+        </div>
     </div>
+
 
     <div id="menu" class="menu-container">
         <a class="forum-button-mobile menu-button" href="/./users">Юзеры</a>
@@ -41,7 +43,6 @@
         <a class="menu-button" id="settings-button" href="/./profile/settings">Изменить профиль</a>
         <a class="menu-button" id="logout-button">Выйти с аккаунта</a>
     </div>
-
     <div class="page">
         {{ .Content }}
     </div>

@@ -3,81 +3,22 @@ package topics_messages
 import (
 	"context"
 	"fmt"
-	"log"
-	"math"
 	"web-forum/internal"
 	"web-forum/system"
-	"web-forum/system/db"
 	"web-forum/www/services/account"
+	"web-forum/www/services/paginator"
 )
 
 var ctx = context.Background()
 
-//func PaginatorQuery(tableName string, columnName string, id int, page int) (pgx.Tx, pgx.Rows, error) {
-//	const errorFunction = "PaginatorQuery"
-//
-//	tx, err := db.Postgres.Begin(ctx)
-//	defer tx.Commit(ctx)
-//
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	var topicsCount float64
-//	fmtQuery := fmt.Sprintf("select count(*) from %s where %s = $1", tableName, columnName)
-//	queryRow := tx.QueryRow(ctx, fmtQuery, id)
-//	countMessagesErr := queryRow.Scan(&topicsCount)
-//	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
-//
-//	if countMessagesErr != nil {
-//		log.Fatal(fmt.Errorf("%s: %w", errorFunction, countMessagesErr))
-//	}
-//
-//	fmtQuery = fmt.Sprintf("SELECT * FROM %s where %s=$1 LIMIT %d OFFSET %d;", tableName, columnName, internal.MaxPaginatorMessages, (page-1)*internal.MaxPaginatorMessages)
-//	rows, err := tx.Query(ctx, fmtQuery, id)
-//
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	paginatorMessages := internal.Paginator{
-//		CurrentPage: page,
-//		AllPages:    int(pagesCount),
-//	}
-//
-//	return tx, rows, nil
-//}
-
 func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics_messages.Get"
 
-	tx, err := db.Postgres.Begin(ctx)
+	tx, rows, paginatorMessages, err := paginator.Query("messages", "topic_id", topic.Id, page)
 	defer tx.Commit(ctx)
 
 	if err != nil {
 		return nil, err
-	}
-
-	var topicsCount float64
-	queryRow := tx.QueryRow(ctx, "SELECT COUNT(*) FROM messages WHERE topic_id = $1;", topic.Id)
-	countMessagesErr := queryRow.Scan(&topicsCount)
-	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
-
-	if countMessagesErr != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunction, countMessagesErr))
-	}
-
-	fmtQuery := fmt.Sprintf("SELECT * FROM messages where topic_id=$1 LIMIT %d OFFSET %d;", internal.MaxPaginatorMessages, (page-1)*internal.MaxPaginatorMessages)
-	rows, err := tx.Query(ctx, fmtQuery, topic.Id)
-	defer rows.Close()
-
-	if err != nil {
-		return nil, err
-	}
-
-	paginatorMessages := internal.Paginator{
-		CurrentPage: page,
-		AllPages:    int(pagesCount),
 	}
 
 	var tempUsers []int

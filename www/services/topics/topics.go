@@ -2,43 +2,22 @@ package topics
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"math"
 	"web-forum/internal"
 	"web-forum/system"
-	"web-forum/system/db"
 	"web-forum/www/services/account"
+	"web-forum/www/services/paginator"
 )
 
 var ctx = context.Background()
 
 func Get(forumId int, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics.Get"
-	var topics internal.Paginator
 
-	tx, err := db.Postgres.Begin(ctx)
+	tx, rows, topics, err := paginator.Query("topics", "forum_id", forumId, page)
 	defer tx.Commit(ctx)
 
 	if err != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
-	}
-
-	var topicsCount float64
-	queryRow := tx.QueryRow(ctx, "SELECT COUNT(*) FROM topics WHERE forum_id=$1;", forumId)
-	countTopicsErr := queryRow.Scan(&topicsCount)
-	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorTopics)
-
-	if countTopicsErr != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunction, countTopicsErr))
-	}
-
-	fmtQuery := fmt.Sprintf("SELECT * FROM topics WHERE forum_id = $1 ORDER BY id DESC LIMIT %d OFFSET %d;", internal.MaxPaginatorTopics, (page-1)*internal.MaxPaginatorTopics)
-	rows, err := tx.Query(ctx, fmtQuery, forumId)
-	defer rows.Close()
-
-	if err != nil {
-		log.Fatal("[functions:35]", err)
+		return nil, system.ErrLog(errorFunction, err.Error())
 	}
 
 	var tempUsers []int
@@ -94,9 +73,6 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 
 		topics.Objects = append(topics.Objects, aboutTopic)
 	}
-
-	topics.CurrentPage = page
-	topics.AllPages = int(pagesCount)
 
 	return &topics, nil
 }
