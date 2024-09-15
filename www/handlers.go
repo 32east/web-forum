@@ -10,6 +10,7 @@ import (
 	"web-forum/system"
 	"web-forum/www/handlers"
 	initialize_functions "web-forum/www/initialize-functions"
+	"web-forum/www/middleware"
 )
 
 func RegisterStaticFiles(path string, urlPath string) {
@@ -52,31 +53,25 @@ func RegisterURLs() {
 	fileServer = http.FileServer(http.Dir("frontend/scripts"))
 	http.Handle("/scripts/", http.StripPrefix("/scripts", fileServer))
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
+	middleware.Page("/", "Главная страница", handlers.MainPage)
 
-		handlers.MainPage(&w, r)
-	})
+	middleware.Page("/faq", "FAQ", handlers.FAQPage)
+	middleware.Page("/users", "Юзеры", handlers.UsersPage)
+	middleware.Page("/login", "Авторизация", handlers.LoginPage)
+	middleware.Page("/register", "Регистрация", handlers.HandleRegisterPage)
+	middleware.Page("/topic/create", "Создание нового топика", handlers.TopicCreate)
+	middleware.Page("/profile/settings", "Настройки аккаунта", handlers.HandleProfileSettings)
 
-	http.HandleFunc("/faq", func(w http.ResponseWriter, r *http.Request) { handlers.FAQPage(&w, r) })
-	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) { handlers.UsersPage(&w, r) })
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) { handlers.LoginPage(&w, r) })
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) { handlers.HandleRegisterPage(&w, r) })
-	http.HandleFunc("/topic/create", func(w http.ResponseWriter, r *http.Request) { handlers.TopicCreate(&w, r) })
-	http.HandleFunc("/profile/settings", func(w http.ResponseWriter, r *http.Request) { handlers.HandleProfileSettings(&w, r) })
+	middleware.Page("/admin/", "Админ панель", handlers.AdminMainPage)
+	middleware.Page("/admin/categories", "Категории - Админ панель", handlers.AdminCategoriesPage)
 
-	http.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) { handlers.AdminMainPage(&w, r) })
-	http.HandleFunc("/admin/categories", func(w http.ResponseWriter, r *http.Request) { handlers.AdminCategoriesPage(&w, r) })
+	middleware.API("/api/login", auth.HandleLogin)
+	middleware.API("/api/register", auth.HandleRegister)
+	middleware.API("/api/logout", auth.HandleLogout)
 
-	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogin(&w, r) })
-	http.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) { auth.HandleRegister(&w, r) })
-	http.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogout(&w, r) })
-	http.HandleFunc("/api/send-message", func(w http.ResponseWriter, r *http.Request) { topics.HandleMessage(&w, r) })
-	http.HandleFunc("/api/profile/settings", func(w http.ResponseWriter, r *http.Request) { profile.HandleSettings(&w, r) })
-	http.HandleFunc("/api/topics/create", func(w http.ResponseWriter, r *http.Request) { topics.HandleTopicCreate(&w, r) })
+	middleware.API("/api/send-message", topics.HandleMessage)
+	middleware.API("/api/profile/settings", profile.HandleSettings)
+	middleware.API("/api/topics/create", topics.HandleTopicCreate)
 
 	initialize_functions.Categorys()
 	initialize_functions.Topics()

@@ -2,21 +2,23 @@ package handlers
 
 import (
 	"net/http"
+	account2 "web-forum/www/services/account"
 	"web-forum/www/templates"
 )
 
-func HandleProfileSettings(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, account := Base(stdRequest, stdWriter)
-	authorized := (*infoToSend)["Authorized"]
-	defer templates.Index.Execute(*stdWriter, infoToSend)
+func HandleProfileSettings(stdRequest *http.Request) {
+	reqCtx := stdRequest.Context()
+	account := reqCtx.Value("AccountData").(*account2.Account)
+	infoToSend := reqCtx.Value("InfoToSend").(map[string]interface{})
+	authorized := infoToSend["Authorized"]
 
 	if !authorized.(bool) {
-		(*infoToSend)["Title"] = "Нет доступа"
-		templates.ContentAdd(infoToSend, templates.ProfileSettings, nil)
+		infoToSend["Title"] = "Нет доступа"
+		templates.ContentAdd(stdRequest, templates.ProfileSettings, nil)
 		return
 	}
 
-	(*infoToSend)["Title"] = "Настройки профиля"
+	infoToSend["Title"] = "Настройки профиля"
 
 	contentToAdd := map[string]interface{}{}
 
@@ -35,5 +37,5 @@ func HandleProfileSettings(stdWriter *http.ResponseWriter, stdRequest *http.Requ
 		contentToAdd["Avatar"] = account.Avatar.String
 	}
 
-	templates.ContentAdd(infoToSend, templates.ProfileSettings, contentToAdd)
+	templates.ContentAdd(stdRequest, templates.ProfileSettings, contentToAdd)
 }

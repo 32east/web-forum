@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/system/db"
 	"web-forum/www/services/category"
@@ -22,12 +21,8 @@ type LastMessage struct {
 	CreateTime string
 }
 
-func MainPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
+func MainPage(stdRequest *http.Request) {
 	const errorFunction = "handlers.MainPage"
-
-	infoToSend, _ := Base(stdRequest, stdWriter)
-	(*infoToSend)["Title"] = internal.SiteName
-	defer templates.Index.Execute(*stdWriter, infoToSend)
 
 	categorys, err := category.Get()
 
@@ -80,7 +75,7 @@ select
 		}
 	}
 
-	templates.ContentAdd(infoToSend, templates.Forum, map[string]interface{}{
+	templates.ContentAdd(stdRequest, templates.Forum, map[string]interface{}{
 		"categorys":          categorys,
 		"categorys_is_empty": len(*categorys) == 0,
 		"LastMessages":       sliceMessages,

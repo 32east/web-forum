@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"web-forum/api/auth"
 	"web-forum/internal"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
@@ -24,16 +23,7 @@ import (
 
 var ctx = context.Background()
 
-func HandleSettings(writer *http.ResponseWriter, reader *http.Request) {
-	newJSONEncoder, answer := auth.PrepareHandle(writer)
-	defer newJSONEncoder.Encode(answer)
-
-	if reader.Method != "POST" {
-		answer["success"], answer["reason"] = false, "method not allowed"
-
-		return
-	}
-
+func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
 	cookie, err := reader.Cookie("access_token")
 
 	if err != nil {

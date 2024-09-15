@@ -5,10 +5,6 @@ import (
 	"web-forum/www/templates"
 )
 
-func UsersPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, _ := Base(stdRequest, stdWriter)
-	(*infoToSend)["Title"] = "Юзеры"
-	defer templates.Index.Execute(*stdWriter, infoToSend)
-
-	templates.ContentAdd(infoToSend, templates.Users, nil)
+func UsersPage(reader *http.Request) {
+	templates.ContentAdd(reader, templates.Users, nil)
 }

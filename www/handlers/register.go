@@ -5,10 +5,6 @@ import (
 	"web-forum/www/templates"
 )
 
-func HandleRegisterPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, _ := Base(stdRequest, stdWriter)
-	(*infoToSend)["Title"] = "Регистрация"
-	defer templates.Index.Execute(*stdWriter, infoToSend)
-
-	templates.ContentAdd(infoToSend, templates.RegisterPage, nil)
+func HandleRegisterPage(reader *http.Request) {
+	templates.ContentAdd(reader, templates.RegisterPage, nil)
 }

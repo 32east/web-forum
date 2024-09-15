@@ -3,6 +3,7 @@ package templates
 import (
 	"bytes"
 	"html/template"
+	"net/http"
 	"reflect"
 )
 
@@ -16,9 +17,11 @@ func Prepare(additionalFiles ...string) *template.Template {
 	return template.Must(parseFiles, err)
 }
 
-func ContentAdd(infoToSend *map[string]interface{}, tmpl *template.Template, content any) {
+func ContentAdd(reader *http.Request, tmpl *template.Template, content any) {
+	InfoToSend := reader.Context().Value("InfoToSend").(map[string]interface{})
+
 	if reflect.ValueOf(content).Kind() == reflect.Map {
-		for k, v := range *infoToSend {
+		for k, v := range InfoToSend {
 			content.(map[string]interface{})[k] = v
 		}
 	}
@@ -26,7 +29,7 @@ func ContentAdd(infoToSend *map[string]interface{}, tmpl *template.Template, con
 	newBytesBuffer := new(bytes.Buffer)
 	tmpl.Execute(newBytesBuffer, content)
 
-	(*infoToSend)["Content"] = template.HTML(newBytesBuffer.String())
+	InfoToSend["Content"] = template.HTML(newBytesBuffer.String())
 }
 
 var Index = Prepare("frontend/forum/index.html")

@@ -20,18 +20,14 @@ type LastRegisteredUser struct {
 	CreatedAt string
 }
 
-func AdminMainPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
+func AdminMainPage(stdRequest *http.Request) {
 	const errorFunction = "AdminMainPage"
-
-	infoToSend, _ := Base(stdRequest, stdWriter)
-	(*infoToSend)["Title"] = "Админ панель"
-	defer templates.Index.Execute(*stdWriter, infoToSend)
 
 	tx, err := db.Postgres.Begin(ctx)
 	defer tx.Commit(ctx)
 
 	if err != nil {
-		templates.ContentAdd(infoToSend, templates.AdminMain, nil)
+		templates.ContentAdd(stdRequest, templates.AdminMain, nil)
 
 		return
 	}
@@ -98,15 +94,11 @@ func AdminMainPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
 		"LastRegisteredUsers": users,
 	}
 
-	templates.ContentAdd(infoToSend, templates.AdminMain, contentToAdd)
+	templates.ContentAdd(stdRequest, templates.AdminMain, contentToAdd)
 }
 
-func AdminCategoriesPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
+func AdminCategoriesPage(stdRequest *http.Request) {
 	const errorFunction = "AdminCategoriesPage"
-
-	infoToSend, _ := Base(stdRequest, stdWriter)
-	(*infoToSend)["Title"] = "Категории - Админ панель"
-	defer templates.Index.Execute(*stdWriter, infoToSend)
 
 	rows, err := db.Postgres.Query(ctx, `select * from forums;`)
 
@@ -128,5 +120,5 @@ func AdminCategoriesPage(stdWriter *http.ResponseWriter, stdRequest *http.Reques
 		categories = append(categories, category)
 	}
 
-	templates.ContentAdd(infoToSend, templates.AdminCategories, categories)
+	templates.ContentAdd(stdRequest, templates.AdminCategories, categories)
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"web-forum/www/handlers"
+	"web-forum/www/middleware"
 	"web-forum/www/services/category"
 	"web-forum/www/services/paginator"
 	"web-forum/www/services/topics"
@@ -21,12 +21,8 @@ func Categorys() {
 	for _, output := range *forums {
 		forumId := output.Id
 
-		http.HandleFunc("/category/"+fmt.Sprint(forumId)+"/", func(w http.ResponseWriter, r *http.Request) {
+		middleware.Page("/category/"+fmt.Sprint(forumId)+"/", output.Name, func(r *http.Request) {
 			currentPage := r.FormValue("page")
-
-			infoToSend, _ := handlers.Base(r, &w)
-			(*infoToSend)["Title"] = output.Name
-			defer templates.Index.Execute(w, infoToSend)
 
 			if currentPage == "" {
 				currentPage = "1"
@@ -59,7 +55,7 @@ func Categorys() {
 				contentToSend["paginator_right"] = finalPaginator.Right.WhichPage
 			}
 
-			templates.ContentAdd(infoToSend, templates.Topics, contentToSend)
+			templates.ContentAdd(r, templates.Topics, contentToSend)
 		})
 	}
 }

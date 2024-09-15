@@ -4,14 +4,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/mail"
 	"strings"
 	"time"
 	"web-forum/internal"
-	"web-forum/system"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
 	initialize_functions "web-forum/www/initialize-functions"
@@ -29,16 +27,6 @@ func CheckForSpecialCharacters(str string) bool {
 	return countSpecialCharacters > 0
 }
 
-func PrepareHandle(writer *http.ResponseWriter) (*json.Encoder, map[string]interface{}) {
-	header := (*writer).Header()
-	header.Add("content-type", "application/json")
-
-	newJSONEncoder := json.NewEncoder(*writer)
-	answer := make(map[string]interface{})
-
-	return newJSONEncoder, answer
-}
-
 func IsLoginAndPasswordLegalForActions(loginStr string, passwordStr string) (bool, string) {
 	success, reason := true, ""
 
@@ -53,23 +41,7 @@ func IsLoginAndPasswordLegalForActions(loginStr string, passwordStr string) (boo
 	return success, reason
 }
 
-func HandleRegister(writer *http.ResponseWriter, reader *http.Request) {
-	const errFunction = "HandleRegister"
-
-	newJSONEncoder, answer := PrepareHandle(writer)
-	defer newJSONEncoder.Encode(answer)
-
-	defer func() {
-		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
-		}
-	}()
-
-	if reader.Method != "POST" {
-		answer["success"], answer["reason"] = false, "method not allowed"
-		return
-	}
-
+func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
 	loginStr := reader.FormValue("login")
 	passwordStr := reader.FormValue("password")
 	username := reader.FormValue("username")
@@ -182,17 +154,8 @@ func HandleRegister(writer *http.ResponseWriter, reader *http.Request) {
 }
 
 // TODO: Могут насрать запросами, что по итогу выльется в DDOS.
-func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
+func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
 	const errFunction = "HandleLogin"
-	newJSONEncoder, answer := PrepareHandle(writer)
-
-	defer func() {
-		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
-		}
-	}()
-
-	defer newJSONEncoder.Encode(answer)
 
 	if reader.Method != "POST" {
 		answer["success"], answer["reason"] = false, "method not allowed"
@@ -259,14 +222,14 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 	// time.Hour * 12, time.Hour * 72
 	answer["access_token_exp"], answer["refresh_token_exp"] = 3600*12, 3600*72
 
-	http.SetCookie(*writer, &http.Cookie{
+	http.SetCookie(writer, &http.Cookie{
 		Name:    "access_token",
 		Value:   accessToken,
 		Expires: time.Now().Add(time.Hour * 12),
 		Path:    "/",
 	})
 
-	http.SetCookie(*writer, &http.Cookie{
+	http.SetCookie(writer, &http.Cookie{
 		Name:    "refresh_token",
 		Value:   refreshToken,
 		Path:    "/",
@@ -274,24 +237,15 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 	})
 }
 
-func HandleLogout(writer *http.ResponseWriter, reader *http.Request) {
-	newJSONEncoder, answer := PrepareHandle(writer)
-	defer newJSONEncoder.Encode(answer)
-
-	if reader.Method != "POST" {
-		answer["success"], answer["reason"] = false, "method not allowed"
-
-		return
-	}
-
-	http.SetCookie(*writer, &http.Cookie{
+func HandleLogout(writer http.ResponseWriter, _ *http.Request, answer map[string]interface{}) {
+	http.SetCookie(writer, &http.Cookie{
 		Name:   "access_token",
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,
 	})
 
-	http.SetCookie(*writer, &http.Cookie{
+	http.SetCookie(writer, &http.Cookie{
 		Name:   "refresh_token",
 		Value:  "",
 		Path:   "/",

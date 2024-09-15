@@ -3,32 +3,18 @@ package topics
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"net/http"
 	"time"
-	"web-forum/api/auth"
 	"web-forum/internal"
-	"web-forum/system"
 	"web-forum/system/db"
-	"web-forum/www/handlers"
+	initialize_functions "web-forum/www/initialize-functions"
 	"web-forum/www/services/account"
 )
 
 var ctx = context.Background()
 
-func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
-	newJSONEncoder, answer := auth.PrepareHandle(writer)
-
-	const errFunction = "HandleMessage"
-	defer func() {
-		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
-		}
-	}()
-
-	defer newJSONEncoder.Encode(answer)
-
+func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
 	cookie, err := reader.Cookie("access_token")
 
 	if err != nil {
@@ -114,18 +100,7 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 	answer["success"] = true
 }
 
-func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
-	newJSONEncoder, answer := auth.PrepareHandle(writer)
-
-	const errFunction = "HandleTopicCreate"
-	defer func() {
-		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
-		}
-	}()
-
-	defer newJSONEncoder.Encode(answer)
-
+func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
 	cookie, err := reader.Cookie("access_token")
 
 	if err != nil {
@@ -198,7 +173,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 	}
 
 	newTopicObject := internal.Topic{Id: lastInsertId, Name: name, Creator: accountId, CreateTime: time.Now()}
-	redirect := handlers.CreateTopic(newTopicObject)
+	redirect := initialize_functions.CreateTopic(newTopicObject)
 
 	go func() {
 		db.Postgres.Exec(context.Background(), "UPDATE forums SET topics_count = topics_count + 1 WHERE id = $1;", categoryId)

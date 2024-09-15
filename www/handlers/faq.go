@@ -5,10 +5,6 @@ import (
 	"web-forum/www/templates"
 )
 
-func FAQPage(stdWriter *http.ResponseWriter, stdRequest *http.Request) {
-	infoToSend, _ := Base(stdRequest, stdWriter)
-	(*infoToSend)["Title"] = "FAQ"
-	defer templates.Index.Execute(*stdWriter, infoToSend)
-
-	templates.ContentAdd(infoToSend, templates.FAQ, nil)
+func FAQPage(reader *http.Request) {
+	templates.ContentAdd(reader, templates.FAQ, nil)
 }

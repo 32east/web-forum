@@ -9,7 +9,7 @@ import (
 	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/system/db"
-	"web-forum/www/handlers"
+	"web-forum/www/middleware"
 	"web-forum/www/services/account"
 	"web-forum/www/templates"
 )
@@ -17,15 +17,15 @@ import (
 var ctx = context.Background()
 
 func CreateProfilePage(accountId int) {
-	http.HandleFunc("/profile/"+fmt.Sprint(accountId)+"/", func(w http.ResponseWriter, r *http.Request) {
-		infoToSend, _ := handlers.Base(r, &w)
+	middleware.Page("/profile/"+fmt.Sprint(accountId)+"/", "", func(r *http.Request) {
 		acc, accErr := account.GetById(accountId)
+
 		if accErr != nil {
 			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to load profile: %v", accErr))
 		}
 
-		(*infoToSend)["Title"] = acc.Username
-		defer templates.Index.Execute(w, infoToSend)
+		infoToSend := r.Context().Value("InfoToSend").(map[string]interface{})
+		infoToSend["Title"] = acc.Username
 
 		timeWithUs := int(math.Round(time.Now().Sub(acc.CreatedAt).Hours() / 24.0))
 		suffix := "дней"
@@ -73,7 +73,7 @@ func CreateProfilePage(accountId int) {
 		if err != nil {
 			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to start transaction: %v", err))
 
-			templates.ContentAdd(infoToSend, templates.Profile, contentToAdd)
+			templates.ContentAdd(r, templates.Profile, contentToAdd)
 
 			return
 		}
@@ -115,7 +115,7 @@ func CreateProfilePage(accountId int) {
 			contentToAdd["ProfileNoMessages"] = true
 		}
 
-		templates.ContentAdd(infoToSend, templates.Profile, contentToAdd)
+		templates.ContentAdd(r, templates.Profile, contentToAdd)
 	})
 }
 
