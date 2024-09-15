@@ -33,7 +33,7 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 		topicsCount = 1
 	}
 
-	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
+	pagesCount := math.Ceil((topicsCount + 1) / internal.MaxPaginatorMessages)
 
 	if float64(page) > pagesCount || float64(page) < 0 {
 		page = 1

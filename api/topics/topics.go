@@ -91,10 +91,10 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 		return
 	}
 
-	pagesCount := math.Ceil(float64((messageCount) / internal.MaxPaginatorMessages))
+	pagesCount := math.Ceil(float64((messageCount)/internal.MaxPaginatorMessages)) + 1
 
 	if pagesCount > 1 {
-		answer["page"] = int(pagesCount) + 1
+		answer["page"] = int(pagesCount)
 	}
 
 	answer["success"] = true

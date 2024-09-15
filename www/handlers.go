@@ -1,6 +1,7 @@
 package www
 
 import (
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -42,16 +43,10 @@ func RegisterURLs() {
 	const errorFunction = "handlers.RegisterURLs"
 	//RegisterStaticFiles("frontend/template/imgs", "images")
 
-	fileServer := http.FileServer(http.Dir("frontend/imgs"))
-	http.Handle("/imgs/", http.StripPrefix("/imgs", fileServer))
-
-	// CSS файлы
-	fileServer = http.FileServer(http.Dir("frontend/styles"))
-	http.Handle("/styles/", http.StripPrefix("/styles", fileServer))
-
-	// JS файлы
-	fileServer = http.FileServer(http.Dir("frontend/scripts"))
-	http.Handle("/scripts/", http.StripPrefix("/scripts", fileServer))
+	for _, val := range []string{"imgs", "styles", "scripts"} {
+		fileServer := http.FileServer(http.Dir(fmt.Sprintf("frontend/%s", val)))
+		http.Handle(fmt.Sprintf("/%s/", val), http.StripPrefix("/"+val, fileServer))
+	}
 
 	middleware.Page("/", "Главная страница", handlers.MainPage)
 
