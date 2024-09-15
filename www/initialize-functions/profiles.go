@@ -21,7 +21,7 @@ func CreateProfilePage(accountId int) {
 		infoToSend, _ := handlers.Base(r, &w)
 		acc, accErr := account.GetById(accountId)
 		if accErr != nil {
-			system.ErrLog("initialize_functions.Profiles", fmt.Sprintf("Failed to load profile: %v", accErr))
+			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to load profile: %v", accErr))
 		}
 
 		(*infoToSend)["Title"] = acc.Username
@@ -63,16 +63,38 @@ func CreateProfilePage(accountId int) {
 			contentToAdd["ProfileDescription"] = acc.Description.String
 		}
 
-		rowsMessages, errMessages := db.Postgres.Query(ctx, `
-				select m.topic_id, t.topic_name, m.message, m.create_time
-				from messages as m
-				inner join topics as t on m.topic_id = t.id
-				where account_id = $1
-				order by m.create_time desc
-				limit 10;`, acc.Id)
+		startTime := time.Now()
+
+		fmt.Print("Querying profile...")
+
+		tx, err := db.Postgres.Begin(ctx)
+		defer tx.Commit(ctx)
+
+		if err != nil {
+			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to start transaction: %v", err))
+
+			templates.ContentAdd(infoToSend, templates.Profile, contentToAdd)
+
+			return
+		}
+
+		rowsMessages, errMessages := tx.Query(ctx, ` 
+		select m.topic_id, t.topic_name, m.message, m.create_time
+		from (
+			select topic_id, message, create_time
+		      from messages
+		      where account_id = $1
+		      order by create_time desc
+		      limit 10
+		) as m
+		inner join topics as t on m.topic_id = t.id
+		order by m.create_time desc;
+		`, acc.Id)
+
+		fmt.Printf("> %dms\n", time.Since(startTime).Milliseconds())
 
 		if errMessages != nil {
-			system.ErrLog("initialize_functions.Profiles", fmt.Sprintf("Failed to fetch messages: %v", errMessages))
+			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to fetch messages: %v", errMessages))
 		}
 
 		for rowsMessages.Next() {
@@ -81,7 +103,7 @@ func CreateProfilePage(accountId int) {
 			scanErr := rowsMessages.Scan(&msg.TopicId, &msg.TopicName, &msg.Message, &createTime)
 
 			if scanErr != nil {
-				system.ErrLog("initialize_functions.Profiles", fmt.Sprintf("Failed to load message: %v", scanErr))
+				system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to load message: %v", scanErr))
 			}
 
 			msg.CreateTime = createTime.Format("2006-01-02 15:04:05")
@@ -110,11 +132,10 @@ func Profiles() {
 		err = rows.Scan(&accountId, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		if err != nil {
-			system.ErrLog("initialize_functions.Profiles", fmt.Sprintf("Failed to initialize profile: %v", err))
+			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to initialize profile: %v", err))
 			continue
 		}
 
-		fmt.Println(accountId)
 		CreateProfilePage(accountId)
 	}
 }

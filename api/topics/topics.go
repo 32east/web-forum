@@ -3,6 +3,8 @@ package topics
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math"
 	"net/http"
 	"time"
 	"web-forum/api/auth"
@@ -21,7 +23,7 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 	const errFunction = "HandleMessage"
 	defer func() {
 		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
+			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
 		}
 	}()
 
@@ -59,7 +61,8 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 	topicId, message := jsonData["topic_id"], jsonData["message"]
 	scanTopicId := -1
 
-	row := db.Postgres.QueryRow(ctx, "SELECT id FROM topics WHERE id = $1;", topicId).Scan(&scanTopicId)
+	tx, err := db.Postgres.Begin(ctx)
+	row := tx.QueryRow(ctx, "SELECT id FROM topics WHERE id = $1;", topicId).Scan(&scanTopicId)
 
 	if row != nil {
 		answer["success"], answer["reason"] = false, "topic not founded"
@@ -67,12 +70,13 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 	}
 
 	msgInsert := internal.FormatString(message.(string))
-
 	accountId := accInfo.Id
-	tx, err := db.Postgres.Begin(ctx)
+
 	defer func() {
 		if !answer["success"].(bool) {
 			tx.Rollback(ctx)
+		} else {
+			tx.Commit(ctx)
 		}
 	}()
 
@@ -89,7 +93,11 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	_, queryErr = tx.Exec(ctx, "update topics set message_count = message_count + 1 where id = $1;", topicId)
+	messageCount := 0
+	queryErr = tx.QueryRow(ctx, `update topics
+	set message_count = message_count + 1
+	where id = $1
+	returning message_count;`, topicId).Scan(&messageCount)
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, queryErr.Error()
@@ -97,12 +105,10 @@ func HandleMessage(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	queryErr = tx.Commit(ctx)
+	pagesCount := math.Ceil(float64((messageCount) / internal.MaxPaginatorMessages))
 
-	if queryErr != nil {
-		answer["success"], answer["reason"] = false, queryErr.Error()
-
-		return
+	if pagesCount > 1 {
+		answer["page"] = int(pagesCount) + 1
 	}
 
 	answer["success"] = true
@@ -114,7 +120,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 	const errFunction = "HandleTopicCreate"
 	defer func() {
 		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
+			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
 		}
 	}()
 
@@ -146,14 +152,6 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 	}
 
 	name, msg, categoryId, accountId := topic["name"], topic["message"], topic["category_id"], accInfo.Id
-	scanCategoryId := -1
-
-	row := db.Postgres.QueryRow(context.Background(), "SELECT id FROM forums WHERE id = $1;", categoryId).Scan(&scanCategoryId)
-
-	if row != nil {
-		answer["success"], answer["reason"] = false, "category not founded"
-		return
-	}
 
 	if internal.Utf8Length(name) > 128 {
 		answer["success"], answer["reason"] = false, "name too long"
@@ -161,7 +159,25 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 		return
 	}
 
-	queryErr := db.Postgres.QueryRow(context.Background(), "INSERT INTO topics (forum_id, topic_name, created_by, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL) returning id;", categoryId, name, accountId)
+	scanCategoryId := -1
+
+	tx, err := db.Postgres.Begin(ctx)
+	defer func() {
+		if !answer["success"].(bool) {
+			tx.Rollback(ctx)
+		} else {
+			tx.Commit(ctx)
+		}
+	}()
+
+	row := tx.QueryRow(context.Background(), "SELECT id FROM forums WHERE id = $1;", categoryId).Scan(&scanCategoryId)
+
+	if row != nil {
+		answer["success"], answer["reason"] = false, "category not founded"
+		return
+	}
+
+	queryErr := tx.QueryRow(context.Background(), "INSERT INTO topics (forum_id, topic_name, created_by, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL) returning id;", categoryId, name, accountId)
 
 	lastInsertId := -1
 	errScan := queryErr.Scan(&lastInsertId)
@@ -173,7 +189,7 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 	}
 
 	msg = internal.FormatString(msg)
-	_, err2Scan := db.Postgres.Exec(context.Background(), "INSERT INTO messages (topic_id, account_id, message, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL)", lastInsertId, accountId, msg)
+	_, err2Scan := tx.Exec(context.Background(), "INSERT INTO messages (topic_id, account_id, message, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL)", lastInsertId, accountId, msg)
 
 	if err2Scan != nil {
 		answer["success"], answer["reason"] = false, err2Scan.Error()
@@ -183,6 +199,10 @@ func HandleTopicCreate(writer *http.ResponseWriter, reader *http.Request) {
 
 	newTopicObject := internal.Topic{Id: lastInsertId, Name: name, Creator: accountId, CreateTime: time.Now()}
 	redirect := handlers.CreateTopic(newTopicObject)
+
+	go func() {
+		db.Postgres.Exec(context.Background(), "UPDATE forums SET topics_count = topics_count + 1 WHERE id = $1;", categoryId)
+	}()
 
 	answer["success"], answer["redirect"] = true, redirect
 }

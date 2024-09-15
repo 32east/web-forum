@@ -30,15 +30,21 @@
             <p style="margin: 10px 0 2px 0">Данная персона ничего не писала :<</p>
             {{ else }}
         {{ range .ProfileMessages }}
-            <a href="/./topics/{{ .TopicId }}">
-                <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
+            <li class="li-topic-container">
+                <a class="topic-container" href="/./topics/{{ .TopicId }}/">
+                    {{ if $.ProfileAvatar }}
+                    <img src="/./imgs/avatars/{{ $.ProfileAvatar }}" loading="lazy" alt="{{ $.ProfileUsername }} avatar" class="avatar a-avatar">
+                    {{ else }}
+                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ $.ProfileUsername }} avatar" class="avatar a-avatar">
+                    {{ end }}
+
                     <div>
-                        <span>{{ .TopicName }}</span>
+                        <span style="font-size: 20px;">{{ .TopicName }}</span>
                         <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .CreateTime }}</span>
                         <p style="white-space: pre-line;">{{ .Message }}</p>
                     </div>
-                </li>
-            </a>
+                </a>
+            </li>
         {{ end }}
             {{ end }}
         </ul>

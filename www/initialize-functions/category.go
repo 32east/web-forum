@@ -44,6 +44,7 @@ func Categorys() {
 			contentToSend := map[string]interface{}{
 				"forum_id":       forumId,
 				"forum_name":     output.Name,
+				"Description":    output.Description,
 				"topics":         topics.Objects,
 				"call_paginator": topics.AllPages > 1,
 				"current_page":   currentPageInt,

@@ -2,6 +2,7 @@ package topics
 
 import (
 	"context"
+	"fmt"
 	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/www/services/account"
@@ -13,11 +14,15 @@ var ctx = context.Background()
 func Get(forumId int, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics.Get"
 
-	tx, rows, topics, err := paginator.Query("topics", "forum_id", forumId, page)
+	queryCount := fmt.Sprintf("select topics_count from forums where id = %d", forumId)
+	tx, rows, topics, err := paginator.Query("topics",
+		"id, forum_id, topic_name, created_by, create_time, update_time, message_count",
+		"forum_id",
+		forumId, page, queryCount)
 	defer tx.Commit(ctx)
 
 	if err != nil {
-		return nil, system.ErrLog(errorFunction, err.Error())
+		return nil, system.ErrLog(errorFunction, err)
 	}
 
 	var tempUsers []int
@@ -29,7 +34,7 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 		scanErr := rows.Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount)
 
 		if scanErr != nil {
-			system.ErrLog(errorFunction, scanErr.Error())
+			system.ErrLog(errorFunction, scanErr)
 			continue
 		}
 
@@ -51,7 +56,7 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 		creatorAccount, ok := usersInfo[topic.Creator]
 
 		if !ok {
-			system.ErrLog("topics.Get", "Не найден креатор топика в БД?")
+			system.ErrLog("topics.Get", fmt.Errorf("Не найден креатор топика в БД?"))
 			continue
 		}
 

@@ -61,7 +61,7 @@ func HandleRegister(writer *http.ResponseWriter, reader *http.Request) {
 
 	defer func() {
 		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
+			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
 		}
 	}()
 
@@ -188,7 +188,7 @@ func HandleLogin(writer *http.ResponseWriter, reader *http.Request) {
 
 	defer func() {
 		if !answer["success"].(bool) {
-			system.ErrLog(errFunction, string(reader.RemoteAddr)+" > "+answer["reason"].(string))
+			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
 		}
 	}()
 

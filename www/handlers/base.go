@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"web-forum/www/services/account"
 )
+
+var ctx = context.Background()
 
 func Base(stdRequest *http.Request, writer *http.ResponseWriter) (*map[string]interface{}, *account.Account) {
 	// go account.TokensRefreshInRedis(stdRequest, writer) // TODO: Расскомент!!!

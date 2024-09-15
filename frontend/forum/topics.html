@@ -1,10 +1,11 @@
 <div class="forum-list">
     <div style="display: flex;">
-        <h2>{{ .forum_name }}</h2>
+        <h2 style="margin: 0;">{{ .forum_name }}</h2>
         {{ if .Authorized }}
         <a href="/./topic/create?category={{ $.forum_id }}" style="text-align: right;line-height:32px;margin: 0 0 0 auto;"> Создать новый топик </a>
         {{ end }}
     </div>
+    <p style="padding-bottom: 5px;">{{.Description}}</p>
 
     <ul>
         {{ if .category_is_empty }}

@@ -60,7 +60,7 @@ func CreateTopic(inputTopic internal.Topic) string {
 		page, errInt := strconv.Atoi(currentPage)
 
 		if errInt != nil {
-			page = 0
+			page = 1
 		}
 
 		paginatorMessages, _ := topics_messages.Get(inputTopic, page)

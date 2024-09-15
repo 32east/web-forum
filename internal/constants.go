@@ -31,6 +31,7 @@ type Category struct {
 	Id          int
 	Name        string
 	Description string
+	TopicsCount int
 }
 
 type Topic struct {

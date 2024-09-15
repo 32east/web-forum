@@ -26,17 +26,14 @@ func Get() (*[]internal.Category, error) {
 	}
 
 	for rows.Next() {
-		var id int
-		var forumName string
-		var forumDescription string
-
-		scanErr := rows.Scan(&id, &forumName, &forumDescription)
+		category := internal.Category{}
+		scanErr := rows.Scan(&category.Id, &category.Name, &category.Description, &category.TopicsCount)
 
 		if scanErr != nil {
 			log.Fatal(fmt.Errorf("%s [2]: %w", errorFunction, scanErr))
 		}
 
-		forums = append(forums, internal.Category{Id: id, Name: forumName, Description: forumDescription})
+		forums = append(forums, category)
 	}
 
 	Cache = &forums

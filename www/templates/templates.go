@@ -6,8 +6,14 @@ import (
 	"reflect"
 )
 
-func ParseFiles(page string) (*template.Template, error) {
-	return template.ParseFiles(page, "frontend/not-authorized.html", "frontend/topic-textarea.html")
+func Prepare(additionalFiles ...string) *template.Template {
+	parseFiles, err := template.ParseFiles(additionalFiles...)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return template.Must(parseFiles, err)
 }
 
 func ContentAdd(infoToSend *map[string]interface{}, tmpl *template.Template, content any) {
@@ -19,17 +25,23 @@ func ContentAdd(infoToSend *map[string]interface{}, tmpl *template.Template, con
 
 	newBytesBuffer := new(bytes.Buffer)
 	tmpl.Execute(newBytesBuffer, content)
+
 	(*infoToSend)["Content"] = template.HTML(newBytesBuffer.String())
 }
 
-var Index = template.Must(ParseFiles("frontend/index.html"))
-var LoginPage = template.Must(ParseFiles("frontend/login.html"))
-var RegisterPage = template.Must(ParseFiles("frontend/register.html"))
-var ProfileSettings = template.Must(ParseFiles("frontend/profile-settings.html"))
-var Forum = template.Must(ParseFiles("frontend/forum.html"))
-var Topics = template.Must(ParseFiles("frontend/topics.html"))
-var TopicPage = template.Must(ParseFiles("frontend/topic.html"))
-var CreateNewTopic = template.Must(ParseFiles("frontend/create-new-topic.html"))
-var FAQ = template.Must(ParseFiles("frontend/faq.html"))
-var Users = template.Must(ParseFiles("frontend/users.html"))
-var Profile = template.Must(ParseFiles("frontend/profile.html"))
+var Index = Prepare("frontend/forum/index.html")
+var LoginPage = Prepare("frontend/forum/login.html")
+var RegisterPage = Prepare("frontend/forum/register.html")
+var Forum = Prepare("frontend/forum/forum.html")
+var Topics = Prepare("frontend/forum/topics.html")
+var FAQ = Prepare("frontend/forum/faq.html")
+var Users = Prepare("frontend/forum/users.html")
+
+var TopicPage = Prepare("frontend/forum/topic.html", "frontend/forum/topic-textarea.html")
+
+var ProfileSettings = Prepare("frontend/forum/profile-settings.html", "frontend/forum/not-authorized.html")
+var CreateNewTopic = Prepare("frontend/forum/create-new-topic.html", "frontend/forum/not-authorized.html")
+var Profile = Prepare("frontend/forum/profile.html", "frontend/forum/not-authorized.html")
+
+var AdminMain = Prepare("frontend/admin/index.html", "frontend/admin/main.html")
+var AdminCategories = Prepare("frontend/admin/index.html", "frontend/admin/categories.html")

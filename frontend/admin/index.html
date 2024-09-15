@@ -1,0 +1,47 @@
+<div class="forum-list">
+    <ul>
+        <div class="razdelenie-govna">
+            <div class="category-menu">
+                <p style="padding-bottom: 5px;">Панель управления</p>
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./admin">
+                        <span style="font-size: 20px;">Главная</span>
+                    </a>
+                </li>
+
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./admin/categories">
+                        <span style="font-size: 20px;">Категории</span>
+                    </a>
+                </li>
+
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./admin/topics">
+                        <span style="font-size: 20px;">Топики</span>
+                    </a>
+                </li>
+
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./admin/messages">
+                        <span style="font-size: 20px;">Сообщения</span>
+                    </a>
+                </li>
+
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./admin/users">
+                        <span style="font-size: 20px;">Пользователи</span>
+                    </a>
+                </li>
+
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./admin/settings">
+                        <span style="font-size: 20px;">Настройки</span>
+                    </a>
+                </li>
+            </div>
+            <div style="width:100%; padding: 0 10px;">
+            {{ template "content" .}}
+            </div>
+        </div>
+    </ul>
+</div>

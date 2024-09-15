@@ -1,0 +1,14 @@
+{{ define "content" }}
+    {{ range . }}
+<h1>Категории</h1>
+<li class="li-topic-container">
+    <a class="topic-container">
+        <div>
+            <span style="font-size: 20px;">{{ .Name }}</span>
+            <br>
+            <span>{{ .Description }}</span>
+        </div>
+    </a>
+</li>
+    {{ end}}
+{{ end }}

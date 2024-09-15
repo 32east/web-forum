@@ -14,7 +14,11 @@ var ctx = context.Background()
 func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics_messages.Get"
 
-	tx, rows, paginatorMessages, err := paginator.Query("messages", "topic_id", topic.Id, page)
+	queryCount := fmt.Sprintf("select message_count from topics where id = %d", topic.Id)
+	tx, rows, paginatorMessages, err := paginator.Query("messages",
+		"id, topic_id, account_id, message, create_time, update_time",
+		"topic_id", topic.Id, page, queryCount)
+
 	defer tx.Commit(ctx)
 
 	if err != nil {
@@ -30,7 +34,7 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 		scanErr := rows.Scan(&msg.Id, &msg.TopicId, &msg.CreatorId, &msg.Message, &msg.CreateTime, &msg.UpdateTime)
 
 		if scanErr != nil {
-			system.ErrLog(errorFunction, scanErr.Error())
+			system.ErrLog(errorFunction, scanErr)
 			continue
 		}
 
@@ -42,11 +46,10 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 
 	for i := 0; i < len(tempMessages); i++ {
 		msg := tempMessages[i]
-
 		acc, ok := usersInfo[msg.CreatorId]
 
 		if !ok {
-			system.ErrLog(errorFunction, fmt.Sprintf("Не найден креатор сообщения в бд? > %s(ID): %s(MSG)", msg.CreatorId, msg.TopicId))
+			system.ErrLog(errorFunction, fmt.Errorf("Не найден креатор сообщения в бд? > %s(ID): %s(MSG)", msg.CreatorId, msg.TopicId))
 			continue
 		}
 

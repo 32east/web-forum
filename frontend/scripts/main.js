@@ -310,8 +310,13 @@ window.onload = function() {
                 .then((data) => {
                     if (data.success === false) {
                         errorMsg.textContent = data.reason;
+                    } else if (data.page !== undefined) {
+                        var url = new URL(window.location.href);
+                        url.searchParams.set("page", data.page);
+                        window.location.href = url.toString();
+                        console.log(window.location.href);
                     } else {
-                        location.reload();
+                        location.reload()
                     }
                 })
                 .catch((error) => {

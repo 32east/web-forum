@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5"
-	"log"
 	"math"
+	"time"
 	"web-forum/internal"
+	"web-forum/system"
 	"web-forum/system/db"
 )
 
 var ctx = context.Background()
 
-func Query(tableName string, columnName string, id int, page int) (tx pgx.Tx, rows pgx.Rows, paginatorMessages internal.Paginator, err error) {
+func Query(tableName string, outputColumns string, columnName string, id int, page int, queryCount string) (tx pgx.Tx, rows pgx.Rows, paginatorMessages internal.Paginator, err error) {
 	const errorFunction = "paginator.Query"
 
 	tx, err = db.Postgres.Begin(ctx)
@@ -21,18 +22,38 @@ func Query(tableName string, columnName string, id int, page int) (tx pgx.Tx, ro
 		return nil, nil, paginatorMessages, err
 	}
 
+	fmt.Print("Querying paginator... ")
+	startTime := time.Now()
 	var topicsCount float64
-	fmtQuery := fmt.Sprintf("select count(*) from %s where %s = $1", tableName, columnName)
-	queryRow := tx.QueryRow(ctx, fmtQuery, id)
+	queryRow := tx.QueryRow(ctx, queryCount)
 	countMessagesErr := queryRow.Scan(&topicsCount)
-	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
 
 	if countMessagesErr != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunction, countMessagesErr))
+		system.ErrLog(errorFunction, countMessagesErr)
+		topicsCount = 1
 	}
 
-	fmtQuery = fmt.Sprintf("select * from %s where %s=$1 LIMIT %d OFFSET %d;", tableName, columnName, internal.MaxPaginatorMessages, (page-1)*internal.MaxPaginatorMessages)
+	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
+
+	if float64(page) > pagesCount || float64(page) < 0 {
+		page = 1
+	}
+
+	fmtQuery := fmt.Sprintf(`select %s
+	from %s
+	where id in (
+		select id from (
+			select id, row_number() over(order by id)
+			from %s
+			where %s=$1
+			offset %d
+			limit %d
+		)
+		order by id
+	)
+	order by id;`, outputColumns, tableName, tableName, columnName, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages)
 	rows, err = tx.Query(ctx, fmtQuery, id)
+	fmt.Printf("> %dms\n", time.Now().Sub(startTime).Milliseconds())
 
 	if err != nil {
 		return nil, nil, paginatorMessages, err
@@ -40,7 +61,6 @@ func Query(tableName string, columnName string, id int, page int) (tx pgx.Tx, ro
 
 	paginatorMessages.CurrentPage = page
 	paginatorMessages.AllPages = int(pagesCount)
-
 	return tx, rows, paginatorMessages, nil
 }
 

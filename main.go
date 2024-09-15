@@ -14,8 +14,11 @@ import (
 func main() {
 	system.RegisterEnvironment()
 
-	db.ConnectDatabase()
-	rdb.ConnectToRedis()
+	conn := db.ConnectDatabase()
+	defer conn.Close()
+
+	redis := rdb.ConnectToRedis()
+	defer redis.Close()
 
 	go timer.Start()
 

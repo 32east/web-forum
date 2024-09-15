@@ -1,0 +1,43 @@
+<div class="forum-list">
+    <ul>
+        <div class="razdelenie-govna">
+            <div class="category-menu">
+                <p style="padding-bottom: 5px;">Категории:</p>
+            {{ if .categorys_is_empty }}
+            <div class="not-authorized-container">
+                <p>В данный момент категорий нет.</p>
+            </div>
+            {{ else }}
+                {{ range .categorys}}
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./category/{{ .Id }}">
+                        <div>
+                            <span style="font-size: 20px;">{{ .Name }}</span>
+                            <!--<br>
+                            <span>{{ .Description }}</span>-->
+                        </div>
+                    </a>
+                </li>
+                {{ end }}
+            {{ end }}
+           </div>
+
+            <div style="width:100%;">
+                <p style="padding-bottom: 5px;">Последние сообщения:</p>
+        {{ range .LastMessages }}
+                <li class="li-topic-container">
+                    <a class="topic-container" href="/./topics/{{ .TopicId }}/">
+                        <div>
+                            <span style="font-size: 24px;">{{ .TopicName }}</span>
+                            <br>
+                            <span>Создал: {{ .TopicCreatedBy }}</span>
+                            <p style="color: rgb(200, 200, 200); font-size: 14px;">Последняя активность: {{ .CreateTime }}</p>
+                            <span>Сообщений в теме: {{ .TopicMessageCount }}</span>
+                        </div>
+                    </a>
+                </li>
+        {{ end }}
+        </div>
+        </div>
+    </ul>
+</div>

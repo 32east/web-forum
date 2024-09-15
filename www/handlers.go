@@ -1,14 +1,13 @@
 package www
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"web-forum/api/auth"
 	"web-forum/api/profile"
 	"web-forum/api/topics"
+	"web-forum/system"
 	"web-forum/www/handlers"
 	initialize_functions "web-forum/www/initialize-functions"
 )
@@ -18,13 +17,13 @@ func RegisterStaticFiles(path string, urlPath string) {
 	file, err := os.Open(path)
 
 	if err != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
+		system.FatalLog(errorFunction, err)
 	}
 
 	fileServer, errDirRead := file.Readdir(-1)
 
 	if errDirRead != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunction, errDirRead))
+		system.FatalLog(errorFunction, errDirRead)
 	}
 
 	for _, value := range fileServer {
@@ -39,6 +38,7 @@ func RegisterStaticFiles(path string, urlPath string) {
 }
 
 func RegisterURLs() {
+	const errorFunction = "handlers.RegisterURLs"
 	//RegisterStaticFiles("frontend/template/imgs", "images")
 
 	fileServer := http.FileServer(http.Dir("frontend/imgs"))
@@ -68,6 +68,9 @@ func RegisterURLs() {
 	http.HandleFunc("/topic/create", func(w http.ResponseWriter, r *http.Request) { handlers.TopicCreate(&w, r) })
 	http.HandleFunc("/profile/settings", func(w http.ResponseWriter, r *http.Request) { handlers.HandleProfileSettings(&w, r) })
 
+	http.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) { handlers.AdminMainPage(&w, r) })
+	http.HandleFunc("/admin/categories", func(w http.ResponseWriter, r *http.Request) { handlers.AdminCategoriesPage(&w, r) })
+
 	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogin(&w, r) })
 	http.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) { auth.HandleRegister(&w, r) })
 	http.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) { auth.HandleLogout(&w, r) })
@@ -79,5 +82,7 @@ func RegisterURLs() {
 	initialize_functions.Topics()
 	initialize_functions.Profiles()
 
-	http.ListenAndServe(":80", nil)
+	httpErr := http.ListenAndServe(":80", nil)
+
+	system.FatalLog(errorFunction, httpErr)
 }

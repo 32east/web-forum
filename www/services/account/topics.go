@@ -25,7 +25,7 @@ func GetFromSlice(tempUsers []int, tx pgx.Tx) map[int]UserTopic {
 	var usersInfo = map[int]UserTopic{}
 
 	if errUsers != nil {
-		system.ErrLog(errorFunction, errUsers.Error())
+		system.ErrLog(errorFunction, errUsers)
 		return usersInfo
 	}
 
@@ -36,7 +36,7 @@ func GetFromSlice(tempUsers []int, tx pgx.Tx) map[int]UserTopic {
 		scanErr := rowsUsers.Scan(&id, &user.Username, &user.Avatar, &user.SignText)
 
 		if scanErr != nil {
-			system.ErrLog(errorFunction, scanErr.Error())
+			system.ErrLog(errorFunction, scanErr)
 			continue
 		}
 

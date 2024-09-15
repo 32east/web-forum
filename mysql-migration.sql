@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS forums (
     id serial PRIMARY KEY,
     forum_name VARCHAR(128),
-    forum_description VARCHAR(2048)
+    forum_description VARCHAR(2048),
+    topics_count INTEGER NOT NULL DEFAULT 0,
 );
 
 CREATE TABLE IF NOT EXISTS topics (
@@ -44,6 +45,10 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (account_id) REFERENCES users(id)
 );
 
-CREATE INDEX message_index ON messages (topic_id) USING BTREE;
-CREATE INDEX topics_index ON topics (id) USING BTREE;
-CREATE INDEX users_index ON users (id) USING BTREE;
+create index messages_id on messages(id);
+create index messages_topic_id on messages(topic_id);
+create index messages_create_time on messages(create_time);
+create index messages_account_id on messages(account_id);
+
+create index topics_id on topics(id);
+create index users_id on users(id);
