@@ -14,11 +14,17 @@ var failsCount = 1 // Зарезервировано.
 func TryToConnect() *pgxpool.Pool {
 	conn, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
 
-	if err == nil {
-		return conn
+	if err != nil {
+		return nil
 	}
 
-	return nil
+	pingErr := conn.Ping(ctx)
+
+	if pingErr != nil {
+		return nil
+	}
+
+	return conn
 }
 
 func ConnectDatabase() *pgxpool.Pool {

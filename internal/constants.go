@@ -29,8 +29,8 @@ var HmacSecret = []byte(os.Getenv("HMAC_SECRET"))
 
 type Category struct {
 	Id          int
-	Name        string
-	Description string
+	Name        string `json:"name"`
+	Description string `json:"description"`
 	TopicsCount int
 }
 

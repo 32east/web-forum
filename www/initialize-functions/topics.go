@@ -1,8 +1,6 @@
 package initialize_functions
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,30 +15,17 @@ import (
 
 func Topics() {
 	const errorFunc = "InitializeTopicsPages"
-	rows, err := db.Postgres.Query(context.Background(), "SELECT * FROM topics;")
-	defer rows.Close()
 
-	if err != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunc, err))
-	}
-
-	for rows.Next() {
+	middleware.Mult("/topics/([0-9]+)", func(w http.ResponseWriter, r *http.Request, topicId int) {
 		topic := internal.Topic{}
-		scanErr := rows.Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount)
+		scanErr := db.Postgres.QueryRow(ctx, "select * from topics where id = $1;", topicId).Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount)
 
 		if scanErr != nil {
-			log.Fatal(fmt.Errorf("%s [2]: %w", errorFunc, scanErr))
+			middleware.Push404(w, r)
+			return
 		}
 
-		CreateTopic(topic)
-	}
-}
-
-// TODO: Лучше это запихнуть в api/topics.
-func CreateTopic(inputTopic internal.Topic) string {
-	url := "/topics/" + fmt.Sprint(inputTopic.Id) + "/"
-
-	middleware.Page(url, inputTopic.Name, func(r *http.Request) {
+		topic.MessageCount -= 1
 		currentPage := r.FormValue("page")
 
 		if currentPage == "" {
@@ -53,20 +38,20 @@ func CreateTopic(inputTopic internal.Topic) string {
 			page = 1
 		}
 
-		paginatorMessages, _ := topics_messages.Get(inputTopic, page)
+		paginatorMessages, _ := topics_messages.Get(topic, page)
 		finalPaginator := paginator.Construct(*paginatorMessages)
-		getAccount, ok := account.GetById(inputTopic.Creator)
+		getAccount, ok := account.GetById(topic.Creator)
 
 		if ok != nil {
-			log.Fatal("фатальная ошибка при получении информации о создателе топика", inputTopic.Creator)
+			log.Fatal("фатальная ошибка при получении информации о создателе топика", topic.Creator)
 		}
 
 		topicInfo := map[string]interface{}{
-			"topic_id":       inputTopic.Id,
-			"topic_name":     inputTopic.Name,
-			"forum_name":     inputTopic.ForumId,
+			"topic_id":       topic.Id,
+			"topic_name":     topic.Name,
+			"forum_name":     topic.ForumId,
 			"username":       getAccount.Username,
-			"create_time":    inputTopic.CreateTime.Format("2006-01-02 15:04:05"),
+			"create_time":    topic.CreateTime.Format("2006-01-02 15:04:05"),
 			"messages":       paginatorMessages.Objects,
 			"call_paginator": paginatorMessages.AllPages > 1,
 			"current_page":   page,
@@ -91,6 +76,8 @@ func CreateTopic(inputTopic internal.Topic) string {
 
 		templates.ContentAdd(r, templates.TopicPage, topicInfo)
 	})
+}
 
-	return url
+func CreateTopic(inputTopic internal.Topic) string {
+	return ""
 }

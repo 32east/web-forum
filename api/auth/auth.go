@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/mail"
@@ -17,6 +18,7 @@ import (
 	jwt_token "web-forum/www/services/jwt-token"
 )
 
+var refreshTokenTime = 3600 * 72
 var ctx = context.Background()
 
 func CheckForSpecialCharacters(str string) bool {
@@ -155,14 +157,6 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 
 // TODO: Могут насрать запросами, что по итогу выльется в DDOS.
 func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
-	const errFunction = "HandleLogin"
-
-	if reader.Method != "POST" {
-		answer["success"], answer["reason"] = false, "method not allowed"
-
-		return
-	}
-
 	loginStr := reader.FormValue("login")
 	passwordStr := reader.FormValue("password")
 
@@ -218,39 +212,104 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 	fmt.Println("Заносим в кэш: " + loginStr)
 
 	answer["success"], answer["access_token"], answer["refresh_token"] = true, accessToken, refreshToken
-
-	// time.Hour * 12, time.Hour * 72
-	answer["access_token_exp"], answer["refresh_token_exp"] = 3600*12, 3600*72
+	answer["access_token_exp"], answer["refresh_token_exp"] = 3600*12, refreshTokenTime
 
 	http.SetCookie(writer, &http.Cookie{
-		Name:    "access_token",
-		Value:   accessToken,
-		Expires: time.Now().Add(time.Hour * 12),
-		Path:    "/",
+		Name:     "access_token",
+		Value:    accessToken,
+		Expires:  time.Now().Add(time.Hour * 24),
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 	})
+}
 
-	http.SetCookie(writer, &http.Cookie{
-		Name:    "refresh_token",
-		Value:   refreshToken,
-		Path:    "/",
-		Expires: time.Now().Add(time.Hour * 72),
+func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) {
+	mapToken := map[string]string{}
+	jsonErr := json.NewDecoder(r.Body).Decode(&mapToken)
+
+	if jsonErr != nil {
+		answer["success"], answer["reason"] = false, jsonErr.Error()
+		return
+	}
+
+	refreshToken := mapToken["refresh_token"]
+
+	if refreshToken == "" {
+		answer["success"], answer["reason"] = false, "refresh token is empty"
+		return
+	}
+
+	tokenClaim, err := jwt_token.GetInfo(refreshToken)
+
+	if err != nil {
+		answer["success"], answer["reason"] = false, err.Error()
+		return
+	}
+
+	accountId := tokenClaim["id"]
+	accessToken, errAccess := jwt_token.GenerateNew(accountId.(int64), "access")
+
+	if errAccess != nil {
+		answer["success"], answer["reason"] = false, errAccess.Error()
+
+		return
+	}
+
+	newRefreshToken, errRefresh := jwt_token.GenerateNew(accountId.(int64), "refresh")
+
+	if errRefresh != nil {
+		answer["success"], answer["reason"] = false, errRefresh.Error()
+		return
+	}
+
+	tx, err := db.Postgres.Begin(ctx)
+	defer func() {
+		if answer["success"].(bool) {
+			tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+
+	if err != nil {
+		answer["success"], answer["reason"] = false, err.Error()
+		return
+	}
+
+	_, execErr := tx.Exec(ctx, "delete from tokens where refresh_token = $1;", refreshToken)
+
+	if execErr != nil {
+		answer["success"], answer["reason"] = false, execErr.Error()
+		return
+	}
+
+	fmtQuery := fmt.Sprintf("insert into tokens (account_id, refresh_token, expires_at) values ($1, $2, now() + interval '%d second');", refreshTokenTime)
+	_, execErr = tx.Exec(ctx, fmtQuery, accountId, newRefreshToken)
+
+	if execErr != nil {
+		answer["success"], answer["reason"] = false, execErr.Error()
+		return
+	}
+
+	answer["success"], answer["access_token"], answer["refresh_token"] = true, accessToken, newRefreshToken
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Expires:  time.Now().Add(time.Hour * 24),
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
 func HandleLogout(writer http.ResponseWriter, _ *http.Request, answer map[string]interface{}) {
 	http.SetCookie(writer, &http.Cookie{
-		Name:   "access_token",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	})
-
-	http.SetCookie(writer, &http.Cookie{
-		Name:   "refresh_token",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-		// HttpOnly: true,
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		SameSite: http.SameSiteLaxMode,
 	})
 
 	answer["success"] = true

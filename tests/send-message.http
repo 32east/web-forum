@@ -1,9 +1,9 @@
 ### Send request with dynamic variables in request's body
-POST http://localhost/api/send-message
-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRpdGlvbmFsIjoiYWNjZXNzIiwicGFzc3dvcmQiOiJhNjY1YTQ1OTIwNDIyZjlkNDE3ZTQ4NjdlZmRjNGZiOGEwNGExZjNmZmYxZmEwN2U5OThlODZmN2Y3YTI3YWUzIiwicmFuZCI6InpPamtGV1B0N1RiRytFaXJmbXoyQVE9PSIsInVzZXJuYW1lIjoicmVpbCJ9.TnNhyEKWnY9Qny4IGO-W3jjkQ--rd2QLl_C3cXKLafE;
+POST http://localhost/api/admin/create
 Content-Type: application/json
+Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRpdGlvbmFsIjoiYWNjZXNzIiwiZXhwaXJlc0F0IjoiMTcyNjU4MDIwNSIsImlkIjoxNTQ2MDY5M30.-68KY080M9YppT_LINU6IJW_owYqpTatO_VSwcsioOI
 
 {
-  "topic_id": 1,
-  "message": "fuck off"
+  "name": "123456",
+  "description": "1234567"
 }

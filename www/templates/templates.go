@@ -2,6 +2,7 @@ package templates
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"net/http"
 	"reflect"
@@ -32,6 +33,14 @@ func ContentAdd(reader *http.Request, tmpl *template.Template, content any) {
 	InfoToSend["Content"] = template.HTML(newBytesBuffer.String())
 }
 
+func Push404(reader *http.Request) {
+	rCtx := reader.Context()
+	writer := rCtx.Value("Writer").(http.ResponseWriter)
+	http.NotFound(writer, reader)
+	rCtx = context.WithValue(rCtx, "BlockExecute", true)
+	*reader = *reader.WithContext(rCtx)
+}
+
 var Index = Prepare("frontend/forum/index.html")
 var LoginPage = Prepare("frontend/forum/login.html")
 var RegisterPage = Prepare("frontend/forum/register.html")
@@ -47,4 +56,5 @@ var CreateNewTopic = Prepare("frontend/forum/create-new-topic.html", "frontend/f
 var Profile = Prepare("frontend/forum/profile.html", "frontend/forum/not-authorized.html")
 
 var AdminMain = Prepare("frontend/admin/index.html", "frontend/admin/main.html")
-var AdminCategories = Prepare("frontend/admin/index.html", "frontend/admin/categories.html")
+var AdminCategories = Prepare("frontend/admin/index.html", "frontend/admin/categories/categories.html")
+var AdminCreateCategory = Prepare("frontend/admin/index.html", "frontend/admin/categories/create.html")

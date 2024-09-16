@@ -24,7 +24,7 @@ type LastMessage struct {
 func MainPage(stdRequest *http.Request) {
 	const errorFunction = "handlers.MainPage"
 
-	categorys, err := category.Get()
+	categorys, err := category.GetAll()
 
 	if err != nil {
 		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
@@ -70,6 +70,7 @@ select
 				continue
 			}
 
+			lastMessage.TopicMessageCount -= 1
 			lastMessage.CreateTime = createTime.Format("2006-01-02 15:04:05")
 			sliceMessages = append(sliceMessages, lastMessage)
 		}

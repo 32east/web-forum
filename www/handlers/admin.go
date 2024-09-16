@@ -122,3 +122,7 @@ func AdminCategoriesPage(stdRequest *http.Request) {
 
 	templates.ContentAdd(stdRequest, templates.AdminCategories, categories)
 }
+
+func AdminCategoryCreate(stdRequest *http.Request) {
+	templates.ContentAdd(stdRequest, templates.AdminCreateCategory, nil)
+}

@@ -42,7 +42,7 @@ func ReadFromCookie(cookie *http.Cookie) (*Account, error) {
 		return nil, tokenErr
 	}
 
-	id, ok := tokenInfo["id"].(float64)
+	id, ok := tokenInfo["id"].(int64)
 
 	if !ok {
 		return nil, fmt.Errorf("id not int")
@@ -111,6 +111,7 @@ func GetById(id int) (*Account, error) {
 // GetByLogin
 // Использовать только по крайней необходимости.
 func GetByLogin(login string) (*Account, error) {
+	startTime := time.Now()
 	accountInfo := &Account{}
 	row := db.Postgres.QueryRow(context.Background(), "SELECT * FROM users WHERE login = $1;", login)
 

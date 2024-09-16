@@ -1,11 +1,101 @@
-
 window.onload = function() {
-    const remove_avatar_button = document.getElementById('remove-avatar-button');
+    const removeAvatarButton = document.getElementById('remove-avatar-button');
+    const form = document.querySelector('.forum-list');
+    const menuButton = document.getElementById('menu-button');
+    const menu = document.getElementById('menu');
+    const logoutButton = document.getElementById('logout-button');
+    const loginForm = document.querySelector('.login-form');
+    const registerBtn = document.getElementById('register-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const sendMessageButton = document.getElementById('send-message');
 
-    if (remove_avatar_button) {
-        remove_avatar_button.addEventListener('click', (e) => {
+    function saveRefreshToken(refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+    }
+
+    function getRefreshToken() {
+        return localStorage.getItem('refresh_token');
+    }
+
+    function checkTokenValidity(callback) {
+        const accessToken = getCookie('access_token');
+        try {
+            const decodedToken = atob(accessToken.split('.')[1]);
+            const tokenData = JSON.parse(decodedToken);
+            const expirationTime = tokenData.exp;
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            if (currentTime > expirationTime) {
+                // Токен истек, обновляем его
+                handleErrorAndRefreshToken({ reason: 'token expired' }, callback);
+            } else {
+                callback();
+            }
+        } catch (error) {
+            console.error('Ошибка декодирования токена:', error);
+            callback();
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (e.target.hasAttribute('href')) {
             e.preventDefault();
+            const url = e.target.href;
+            checkTokenValidity(() => {
+                window.location.href = url;
+            });
+        }
+    });
 
+    // Функция для обработки ошибок и обновления токенов
+    function handleErrorAndRefreshToken(error, callback) {
+        if (error.reason === "token is expired" || error.reason === "not authorized") {
+            fetch('/api/refresh-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refresh_token: getRefreshToken() })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Обновляем токен доступа
+                        setCookie('access_token', data.access_token, 1);
+                        callback(); // Повторяем первоначальный запрос
+                    } else {
+                        console.error('Ошибка обновления токена:', data.reason);
+                    }
+                })
+                .catch(error => console.error('Ошибка обновления токена:', error));
+        } else {
+            console.error('Ошибка:', error);
+        }
+    }
+
+    // Функция для получения значения cookie
+    function getCookie(name) {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                return cookie.substring(name.length + 1);
+            }
+        }
+        return '';
+    }
+
+    // Функция для установки cookie
+    function setCookie(name, value, days) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
+    }
+
+    // Обработчик для кнопки удаления аватара
+    if (removeAvatarButton) {
+        removeAvatarButton.addEventListener('click', (e) => {
+            e.preventDefault();
             const newValues = {
                 avatarRemove: true,
                 username: form.querySelector('input[placeholder="Юзернейм"]').value,
@@ -13,36 +103,44 @@ window.onload = function() {
                 signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
             };
             const formData = new FormData();
-
-            if (Object.keys(newValues).length > 0) {
-                Object.keys(newValues).forEach((key) => {
-                    formData.append(key, newValues[key]);
-                });
-            }
+            Object.keys(newValues).forEach(key => formData.append(key, newValues[key]));
 
             fetch('/api/profile/settings', {
                 method: 'POST',
                 body: formData,
-            }).then(response => response.json())
-                .then((data) => {
-                    if (data.success === true) {
-                        location.reload()
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        handleErrorAndRefreshToken(data, () => {
+                            fetch('/api/profile/settings', {
+                                method: 'POST',
+                                body: formData,
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        location.reload();
+                                    }
+                                })
+                                .catch(error => console.error('Ошибка:', error));
+                        });
                     }
-                }).catch((error) => {
-                console.log(error);
-            });
+                })
+                .catch(error => console.error('Ошибка:', error));
         });
     }
 
-    const form = document.querySelector('.forum-list');
-
+    // Обработчик для кнопки сохранения настроек
     if (form) {
         const saveButton = document.getElementById('save-settings');
         const username = form.querySelector('input[placeholder="Юзернейм"]');
 
         if (username) {
             const originalValues = {
-                username: form.querySelector('input[placeholder="Юзернейм"]').value,
+                username: username.value,
                 description: form.querySelector('textarea[placeholder="Текст описания"]').value,
                 avatar: null,
                 signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
@@ -50,42 +148,47 @@ window.onload = function() {
 
             saveButton.addEventListener('click', (e) => {
                 e.preventDefault();
-
                 const newValues = {
-                    username: form.querySelector('input[placeholder="Юзернейм"]').value,
+                    username: username.value,
                     description: form.querySelector('textarea[placeholder="Текст описания"]').value,
                     avatar: form.querySelector('input[type="file"]').files[0],
                     signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
                 };
 
                 const changedValues = newValues;
+                const formData = new FormData();
+                Object.keys(changedValues).forEach(key => formData.append(key, changedValues[key]));
 
-                if (Object.keys(changedValues).length > 0) {
-                    const formData = new FormData();
-
-                    Object.keys(changedValues).forEach((key) => {
-                        formData.append(key, changedValues[key]);
-                    });
-
-                    fetch('/api/profile/settings', {
-                        method: 'POST',
-                        body: formData,
+                fetch('/api/profile/settings', {
+                    method: 'POST',
+                    body: formData,
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            handleErrorAndRefreshToken(data, () => {
+                                fetch('/api/profile/settings', {
+                                    method: 'POST',
+                                    body: formData,
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            location.reload();
+                                        }
+                                    })
+                                    .catch(error => console.error('Ошибка:', error));
+                            });
+                        }
                     })
-                        .then((response) => response.json())
-                        .then(function (data) {
-
-                            if (!data.success) {
-                                return
-                            }
-
-                            location.reload()
-                        })
-                        .catch((error) => console.log(error));
-                }
+                    .catch(error => console.error('Ошибка:', error));
             });
         }
     }
 
+    // Обработчик для кнопки создания темы
     const select = document.getElementById('categorys');
     const topicNameInput = document.querySelector('input.left-right-5px');
     const topicMessageInput = document.querySelector('textarea.left-right-5px');
@@ -93,11 +196,9 @@ window.onload = function() {
     if (saveButton2) {
         saveButton2.addEventListener('click', (e) => {
             e.preventDefault();
-
             const categoryId = select.value;
             const topicName = topicNameInput.value.trim();
             const topicMessage = topicMessageInput.value.trim();
-
             const data = {
                 category_id: categoryId,
                 name: topicName,
@@ -112,16 +213,77 @@ window.onload = function() {
                 body: JSON.stringify(data)
             })
                 .then(response => response.json())
-                .then((data) => {
-                    if (data.success === true) {
+                .then(data => {
+                    if (data.success) {
                         window.location.href = data.redirect;
                     } else {
-                        alert(`Ошибка: ${data.reason}`);
+                        handleErrorAndRefreshToken(data, () => {
+                            fetch('/api/topics/create', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(data)
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        window.location.href = data.redirect;
+                                    }
+                                })
+                                .catch(error => console.error('Ошибка:', error));
+                        });
                     }
                 })
-                .catch((error) => {
-                    console.error('Ошибка:', error);
-                });
+                .catch(error => console.error('Ошибка:', error));
+        });
+    }
+
+    // Обработчик для кнопки создания категории
+    const categoryName = document.querySelector('input.left-right-5px');
+    const categoryDescription = document.querySelector('textarea.left-right-5px');
+    const categoryCreateBtn = document.getElementById('create-category-btn');
+    if (categoryCreateBtn) {
+        categoryCreateBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const topicName = categoryName.value.trim();
+            const topicMessage = categoryDescription.value.trim();
+            const data = {
+                name: topicName,
+                description: topicMessage
+            };
+
+            fetch('/api/admin/category/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = "/admin/categories";
+                    } else {
+                        handleErrorAndRefreshToken(data, () => {
+                            fetch('/api/admin/category/create', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(data)
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        window.location.href = "/admin/categories";
+                                    }
+                                })
+                                .catch(error => console.error('Ошибка:', error));
+                        });
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
         });
     }
 
@@ -138,31 +300,19 @@ window.onload = function() {
         return { top: Math.round(top), left: Math.round(left) };
     }
 
-    const menu_button = document.getElementById('menu-button');
-
-    const menu = document.getElementById("menu");
-    let showed = false;
-
-    if (menu_button) {
-        menu_button.addEventListener('click', (e) => {
+    // Обработчик для кнопки меню
+    if (menuButton) {
+        menuButton.addEventListener('click', (e) => {
             e.preventDefault();
+            menuButton.classList.toggle("account-button-opened");
+            menu.classList.toggle("menu-container-open");
+        });
 
-            if (menu.classList.contains("menu-container-open")) {
-                menu_button.classList.remove("account-button-opened")
-                menu.classList.remove("menu-container-open")
-                showed = false;
-            } else {
-                menu_button.classList.add("account-button-opened")
-                menu.classList.add("menu-container-open")
-                showed = true;
-            }
-        })
-
-        let left = getCoords(menu_button).left + menu_button.offsetWidth - 150;
+        let left = getCoords(menuButton).left + menuButton.offsetWidth - 150;
         let existsTimeout = -1
 
         window.onresize = function() {
-            left = getCoords(menu_button).left + menu_button.offsetWidth - 150;
+            left = getCoords(menuButton).left + menuButton.offsetWidth - 150;
             menu.style.margin = 'auto ' + left + 'px';
             menu.style.transition = '0s';
 
@@ -176,152 +326,131 @@ window.onload = function() {
         menu.style.margin = 'auto ' + left + 'px';
     }
 
-    const logout_button = document.getElementById('logout-button');
-
-    if (logout_button) {
-        logout_button.addEventListener('click', (e) => {
+    // Обработчик для кнопки выхода
+    if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
             e.preventDefault();
-
             fetch('/api/logout', {
                 method: 'POST',
             })
-                .then((response) => {
+                .then(() => {
                     location.reload();
                 })
-                .catch((error) => {
+                .catch(() => {
                     location.reload();
                 });
         });
     }
 
-    const loginForm = document.querySelector('.login-form');
-    const registerBtn = document.querySelector('#register-btn');
-    const errorMsg = document.querySelector('#error-msg');
-
+    // Обработчик для кнопки регистрации
     if (registerBtn) {
-        let btn_activated = false;
-
         registerBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            if (btn_activated) { return }
             const login = loginForm.querySelector('input[name="login"]').value;
             const password = loginForm.querySelector('input[name="password"]').value;
             const username = loginForm.querySelector('input[name="username"]').value;
             const email = loginForm.querySelector('input[name="email"]').value;
-
             const formData = new FormData();
             formData.append('login', login);
             formData.append('password', password);
             formData.append('username', username);
             formData.append('email', email);
 
-            btn_activated = true
             fetch('/api/register', {
                 method: 'POST',
                 body: formData,
             })
-                .then((response) => {
-                    if (!response.ok) {
-                        btn_activated = false
-                        throw new Error('Произошла ошибка на стороне сервера.');
-                    }
-
-                    return response.json();
-                })
-                .then((data) => {
-                    if (data.success === false) {
-                        btn_activated = false
-                        errorMsg.textContent = data.reason;
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Вы успешно зарегистрировались! Сейчас мы перенаправим вас на страницу с авторизацией...");
+                        setTimeout(() => {
+                            window.location.href = "/login";
+                        }, 1500);
                     } else {
-                        errorMsg.textContent = "Вы успешно зарегистрировались! Сейчас мы перенаправим вам на страницу с авторизацией..."
-                        setInterval(function() {
-                            window.location.href = "/login"
-                        }, 1500)
+                        alert(`Ошибка: ${data.reason}`);
                     }
                 })
-                .catch((error) => {
-                    btn_activated = false
-                    errorMsg.textContent = 'Произошла ошибка на стороне сервера.';
-                });
+                .catch(error => alert('Произошла ошибка на стороне сервера.'));
         });
     }
-
-    const loginBtn = document.querySelector('#login-btn');
 
     if (loginBtn) {
         loginBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const login = loginForm.querySelector('input[name="login"]').value;
-            const passwrd = loginForm.querySelector('input[name="password"]').value;
-
+            const password = loginForm.querySelector('input[name="password"]').value;
             const formData = new FormData();
             formData.append('login', login);
-            formData.append('password', passwrd);
+            formData.append('password', password);
 
             fetch('/api/login', {
                 method: 'POST',
                 body: formData,
             })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error('Произошла ошибка на стороне сервера.');
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    if (data.success === false) {
-                        errorMsg.textContent = data.reason;
-                    } else {
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        saveRefreshToken(data.refresh_token); // Сохраняем refresh_token в localStorage
                         window.location.href = "/";
+                    } else {
+                        alert(`Ошибка: ${data.reason}`);
                     }
                 })
-                .catch((error) => {
-                    errorMsg.textContent = 'Произошла ошибка на стороне сервера.';
-                });
+                .catch(error => alert('Произошла ошибка на стороне сервера.'));
         });
     }
 
-    const sendMessageButton = document.getElementById('send-message');
-
+    // Обработчик для кнопки отправки сообщения
     if (sendMessageButton) {
         sendMessageButton.addEventListener('click', (e) => {
             e.preventDefault();
-
-            const errorMsg = document.getElementById("error-msg")
             const message = document.getElementById('message-textarea').value;
-            let topicId = document.location.href.split('/');
+            const topicId = document.location.href.split('/')[document.location.href.split('/').length - 2];
 
             fetch('/api/send-message', {
                 method: 'POST',
                 body: JSON.stringify({
-                    topic_id: Number(topicId[topicId.length - 2]),
+                    topic_id: Number(topicId),
                     message: message
                 }),
             })
-                .then((response) => {
-                    if (!response.ok) {
-                        errorMsg.textContent = 'Произошла ошибка на стороне сервера.';
-
-                        return
-                    }
-
-                    return response.json();
-                })
-                .then((data) => {
-                    if (data.success === false) {
-                        errorMsg.textContent = data.reason;
-                    } else if (data.page !== undefined) {
-                        var url = new URL(window.location.href);
-                        url.searchParams.set("page", data.page);
-                        window.location.href = url.toString();
-                        console.log(window.location.href);
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.page) {
+                            const url = new URL(window.location.href);
+                            url.searchParams.set("page", data.page);
+                            window.location.href = url.toString();
+                        } else {
+                            location.reload();
+                        }
                     } else {
-                        location.reload()
+                        handleErrorAndRefreshToken(data, () => {
+                            fetch('/api/send-message', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    topic_id: Number(topicId),
+                                    message: message
+                                }),
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        if (data.page) {
+                                            const url = new URL(window.location.href);
+                                            url.searchParams.set("page", data.page);
+                                            window.location.href = url.toString();
+                                        } else {
+                                            location.reload();
+                                        }
+                                    }
+                                })
+                                .catch(error => console.error('Ошибка:', error));
+                        });
                     }
                 })
-                .catch((error) => {
-                    errorMsg.textContent = 'Произошла ошибка на стороне сервера.';
-                });
+                .catch(error => console.error('Ошибка:', error));
         });
     }
-}
+};

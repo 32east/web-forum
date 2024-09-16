@@ -1,7 +1,6 @@
 package initialize_functions
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"web-forum/www/middleware"
@@ -12,50 +11,41 @@ import (
 )
 
 func Categorys() {
-	forums, err := category.Get()
+	middleware.Mult("/category/([0-9]+)", func(w http.ResponseWriter, r *http.Request, forumId int) {
+		output := category.GetInfo(forumId)
 
-	if err != nil {
-		panic(err)
-	}
+		currentPage := r.FormValue("page")
 
-	for _, output := range *forums {
-		forumId := output.Id
+		if currentPage == "" {
+			currentPage = "1"
+		}
 
-		middleware.Page("/category/"+fmt.Sprint(forumId)+"/", output.Name, func(r *http.Request) {
-			currentPage := r.FormValue("page")
+		currentPageInt, errInt := strconv.Atoi(currentPage)
 
-			if currentPage == "" {
-				currentPage = "1"
-			}
+		if errInt != nil {
+			currentPageInt = 0
+		}
+		topics, _ := topics.Get(forumId, currentPageInt)
+		finalPaginator := paginator.Construct(*topics)
 
-			currentPageInt, errInt := strconv.Atoi(currentPage)
+		contentToSend := map[string]interface{}{
+			"forum_id":       forumId,
+			"forum_name":     output.Name,
+			"Description":    output.Description,
+			"topics":         topics.Objects,
+			"call_paginator": topics.AllPages > 1,
+			"current_page":   currentPageInt,
+			"paginator":      finalPaginator.PagesArray,
+		}
 
-			if errInt != nil {
-				currentPageInt = 0
-			}
+		if finalPaginator.Left.Activated {
+			contentToSend["paginator_left"] = finalPaginator.Left.WhichPage
+		}
 
-			topics, _ := topics.Get(forumId, currentPageInt)
-			finalPaginator := paginator.Construct(*topics)
+		if finalPaginator.Right.Activated {
+			contentToSend["paginator_right"] = finalPaginator.Right.WhichPage
+		}
 
-			contentToSend := map[string]interface{}{
-				"forum_id":       forumId,
-				"forum_name":     output.Name,
-				"Description":    output.Description,
-				"topics":         topics.Objects,
-				"call_paginator": topics.AllPages > 1,
-				"current_page":   currentPageInt,
-				"paginator":      finalPaginator.PagesArray,
-			}
-
-			if finalPaginator.Left.Activated {
-				contentToSend["paginator_left"] = finalPaginator.Left.WhichPage
-			}
-
-			if finalPaginator.Right.Activated {
-				contentToSend["paginator_right"] = finalPaginator.Right.WhichPage
-			}
-
-			templates.ContentAdd(r, templates.Topics, contentToSend)
-		})
-	}
+		templates.ContentAdd(r, templates.Topics, contentToSend)
+	})
 }

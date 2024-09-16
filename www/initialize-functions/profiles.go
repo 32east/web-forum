@@ -17,11 +17,14 @@ import (
 var ctx = context.Background()
 
 func CreateProfilePage(accountId int) {
-	middleware.Page("/profile/"+fmt.Sprint(accountId)+"/", "", func(r *http.Request) {
+	fmt.Println("Creating profile page", accountId)
+
+	middleware.Mult("/profile/([0-9]+)", func(w http.ResponseWriter, r *http.Request, accountId int) {
 		acc, accErr := account.GetById(accountId)
 
 		if accErr != nil {
-			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to load profile: %v", accErr))
+			middleware.Push404(w, r)
+			return
 		}
 
 		infoToSend := r.Context().Value("InfoToSend").(map[string]interface{})

@@ -3,12 +3,11 @@ package topics
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
-	"time"
 	"web-forum/internal"
 	"web-forum/system/db"
-	initialize_functions "web-forum/www/initialize-functions"
 	"web-forum/www/services/account"
 )
 
@@ -172,12 +171,9 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 		return
 	}
 
-	newTopicObject := internal.Topic{Id: lastInsertId, Name: name, Creator: accountId, CreateTime: time.Now()}
-	redirect := initialize_functions.CreateTopic(newTopicObject)
-
 	go func() {
 		db.Postgres.Exec(context.Background(), "UPDATE forums SET topics_count = topics_count + 1 WHERE id = $1;", categoryId)
 	}()
 
-	answer["success"], answer["redirect"] = true, redirect
+	answer["success"], answer["redirect"] = true, fmt.Sprintf("/topics/%d", lastInsertId)
 }

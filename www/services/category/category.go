@@ -2,27 +2,27 @@ package category
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"web-forum/internal"
+	"web-forum/system"
 	"web-forum/system/db"
 )
 
 var Cache *[]internal.Category
+var CacheMap = make(map[int]*internal.Category)
 
-func Get() (*[]internal.Category, error) {
+func GetAll() (*[]internal.Category, error) {
 	if Cache != nil {
 		return Cache, nil
 	}
 
-	const errorFunction = "category.Get"
+	const errorFunction = "category.GetAll"
 
 	var forums []internal.Category
 	rows, err := db.Postgres.Query(context.Background(), "SELECT * FROM forums;")
 	defer rows.Close()
 
 	if err != nil {
-		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
+		system.FatalLog(errorFunction, err)
 	}
 
 	for rows.Next() {
@@ -30,7 +30,7 @@ func Get() (*[]internal.Category, error) {
 		scanErr := rows.Scan(&category.Id, &category.Name, &category.Description, &category.TopicsCount)
 
 		if scanErr != nil {
-			log.Fatal(fmt.Errorf("%s [2]: %w", errorFunction, scanErr))
+			system.FatalLog(errorFunction, scanErr)
 		}
 
 		forums = append(forums, category)
@@ -38,5 +38,19 @@ func Get() (*[]internal.Category, error) {
 
 	Cache = &forums
 
+	for _, value := range *Cache {
+		CacheMap[value.Id] = &value
+	}
+
 	return &forums, nil
+}
+
+func GetInfo(id int) *internal.Category {
+	val, ok := CacheMap[id]
+
+	if !ok {
+		return &internal.Category{}
+	}
+
+	return val
 }

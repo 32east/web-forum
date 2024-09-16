@@ -9,7 +9,7 @@ import (
 	"web-forum/internal"
 )
 
-func GenerateNew(accountId int, additionalParam string) (string, error) {
+func GenerateNew[T int | int64](accountId T, additionalParam string) (string, error) {
 	randomBytes := make([]byte, 16)
 	_, err := rand.Read(randomBytes)
 
@@ -44,6 +44,13 @@ func GetInfo(token string) (jwt.MapClaims, error) {
 	}
 
 	tokenClaim := tokenParse.Claims.(jwt.MapClaims)
+	id, idOk := tokenClaim["id"].(float64)
+
+	if !idOk {
+		return nil, fmt.Errorf("invalid id")
+	}
+
+	tokenClaim["id"] = int64(id)
 	exp, ok := tokenClaim["expiresAt"].(string)
 
 	if !ok {

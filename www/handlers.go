@@ -5,6 +5,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"web-forum/api/admin"
 	"web-forum/api/auth"
 	"web-forum/api/profile"
 	"web-forum/api/topics"
@@ -57,16 +58,21 @@ func RegisterURLs() {
 	middleware.Page("/topic/create", "Создание нового топика", handlers.TopicCreate)
 	middleware.Page("/profile/settings", "Настройки аккаунта", handlers.HandleProfileSettings)
 
-	middleware.Page("/admin/", "Админ панель", handlers.AdminMainPage)
+	middleware.Page("/admin", "Админ панель", handlers.AdminMainPage)
 	middleware.Page("/admin/categories", "Категории - Админ панель", handlers.AdminCategoriesPage)
+	middleware.Page("/admin/categories/create", "Категории - Админ панель", handlers.AdminCategoryCreate)
 
 	middleware.API("/api/login", auth.HandleLogin)
 	middleware.API("/api/register", auth.HandleRegister)
 	middleware.API("/api/logout", auth.HandleLogout)
+	middleware.API("/api/refresh-token", auth.HandleRefreshToken)
 
 	middleware.API("/api/send-message", topics.HandleMessage)
 	middleware.API("/api/profile/settings", profile.HandleSettings)
 	middleware.API("/api/topics/create", topics.HandleTopicCreate)
+
+	middleware.API("/api/admin/category/create", admin.HandleCategoryCreate)
+	// middleware.API("/api/admin/category/edit", admin.HandleCategoryCreate)
 
 	initialize_functions.Categorys()
 	initialize_functions.Topics()

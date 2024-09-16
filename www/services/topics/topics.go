@@ -38,6 +38,8 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 			continue
 		}
 
+		topic.MessageCount -= 1
+
 		tempUsers = append(tempUsers, topic.Creator)
 		tempTopics = append(tempTopics, topic)
 	}

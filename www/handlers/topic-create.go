@@ -8,7 +8,7 @@ import (
 )
 
 func TopicCreate(stdRequest *http.Request) {
-	forums, err := category.Get()
+	forums, err := category.GetAll()
 
 	if err != nil {
 		panic(err)

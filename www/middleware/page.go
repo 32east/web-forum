@@ -17,12 +17,18 @@ func Page(uri string, title string, newFunc func(*http.Request)) {
 		infoToSend, accountData := handlers.Base(reader)
 		infoToSend["Title"] = title
 
-		ctx := context.WithValue(reader.Context(), "InfoToSend", infoToSend)
+		ctx := reader.Context()
+		ctx = context.WithValue(ctx, "InfoToSend", infoToSend)
 		ctx = context.WithValue(ctx, "AccountData", accountData)
+		ctx = context.WithValue(ctx, "Writer", writer)
 
 		reader = reader.WithContext(ctx)
 
 		newFunc(reader)
+
+		if reader.Context().Value("BlockExecute") == true {
+			return
+		}
 
 		templates.Index.Execute(writer, infoToSend)
 	})

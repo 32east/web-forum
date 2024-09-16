@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS topics (
     created_by INTEGER NOT NULL,
     create_time TIMESTAMP NOT NULL,
     update_time TIMESTAMP,
-    message_count INTEGER NOT NULL DEFAULT 0,
+    message_count INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (created_by) REFERENCES users(id),
     FOREIGN KEY (forum_id) REFERENCES forums(id)
 );
@@ -45,6 +45,15 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (account_id) REFERENCES users(id)
 );
 
+create table if not exists tokens (
+    id serial primary key,
+    account_id integer not null,
+    refresh_token varchar(255) not null,
+    expiresAt timestamp not null,
+    FOREIGN KEY (account_id) REFERENCES users(id)
+);
+
+create index refresh_token_index on tokens(refresh_token);
 create index messages_id on messages(id);
 create index messages_topic_id on messages(topic_id);
 create index messages_create_time on messages(create_time);

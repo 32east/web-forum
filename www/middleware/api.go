@@ -19,6 +19,7 @@ func API(uri string, newFunc func(http.ResponseWriter, *http.Request, map[string
 
 		newJSONEncoder := json.NewEncoder(writer)
 		answer := make(map[string]interface{})
+		defer newJSONEncoder.Encode(answer)
 
 		if reader.Method != "POST" {
 			answer["success"], answer["reason"] = false, "method not allowed"
@@ -27,10 +28,8 @@ func API(uri string, newFunc func(http.ResponseWriter, *http.Request, map[string
 
 		newFunc(writer, reader, answer)
 
-		if !answer["success"].(bool) {
+		if answer["success"] != nil && !answer["success"].(bool) {
 			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
 		}
-
-		newJSONEncoder.Encode(answer)
 	})
 }
