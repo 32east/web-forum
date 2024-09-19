@@ -47,31 +47,31 @@ func Topics() {
 		}
 
 		topicInfo := map[string]interface{}{
-			"topic_id":       topic.Id,
-			"topic_name":     topic.Name,
-			"forum_name":     topic.ForumId,
-			"username":       getAccount.Username,
-			"create_time":    topic.CreateTime.Format("2006-01-02 15:04:05"),
-			"messages":       paginatorMessages.Objects,
-			"call_paginator": paginatorMessages.AllPages > 1,
-			"current_page":   page,
-			"paginator":      finalPaginator.PagesArray,
+			"Id":                   topic.Id,
+			"Name":                 topic.Name,
+			"ForumName":            topic.ForumId,
+			"CreatorUsername":      getAccount.Username,
+			"CreateTime":           topic.CreateTime.Format("2006-01-02 15:04:05"),
+			"Messages":             paginatorMessages.Objects,
+			"PaginatorIsActivated": paginatorMessages.AllPages > 1,
+			"Paginator":            finalPaginator.PagesArray,
+			"CurrentPage":          page,
 		}
 
 		if finalPaginator.Left.Activated {
-			topicInfo["paginator_left"] = finalPaginator.Left.WhichPage
+			topicInfo["PaginatorLeft"] = finalPaginator.Left.WhichPage
 		}
 
 		if finalPaginator.Right.Activated {
-			topicInfo["paginator_right"] = finalPaginator.Right.WhichPage
+			topicInfo["PaginatorRight"] = finalPaginator.Right.WhichPage
 		}
 
 		if getAccount.Avatar.Valid {
-			topicInfo["avatar"] = getAccount.Avatar.String
+			topicInfo["Avatar"] = getAccount.Avatar.String
 		}
 
 		if getAccount.SignText.Valid {
-			topicInfo["sign_text"] = getAccount.SignText.String
+			topicInfo["SignText"] = getAccount.SignText.String
 		}
 
 		templates.ContentAdd(r, templates.TopicPage, topicInfo)

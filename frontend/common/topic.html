@@ -1,0 +1,19 @@
+{{ define "topic" }}
+<li class="li-topic-container">
+    <a class="topic-container" href="/./topics/{{ .Id }}/">
+        {{ if .Avatar }}
+        <img src="/./imgs/avatars/{{ .Avatar }}" loading="lazy" alt="{{ .CreatorUsername }} avatar" class="avatar a-avatar">
+        {{ else }}
+        <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .CreatorUsername }} avatar" class="avatar a-avatar">
+        {{ end }}
+
+        <div>
+            <span style="font-size: 24px;">{{ .Name }}</span>
+            <br>
+            <span>Создал: {{ .CreatorUsername }}</span> <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .CreateTime }}</span>
+            <br>
+            <span>Сообщений в теме: {{ .MessageCount }}</span>
+        </div>
+    </a>
+</li>
+{{ end }}

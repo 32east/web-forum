@@ -12,6 +12,6 @@ func ErrLog(funcName string, err error) error {
 }
 
 func FatalLog(funcName string, err error) {
-	fmtPrint := fmt.Sprintf("%s: %w", funcName, err)
+	fmtPrint := fmt.Sprintf("%s: %s", funcName, err)
 	log.Fatalln(fmtPrint)
 }

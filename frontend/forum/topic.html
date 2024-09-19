@@ -1,55 +1,33 @@
 <div class="forum-list">
-    <h2 style="overflow-wrap: anywhere;">{{ .topic_name }}</h2>
+    <h2 style="overflow-wrap: anywhere;">{{ .Name }}</h2>
 
     <ul>
-        {{ range .messages }}
-        <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
-            <div style="display: flex; overflow-wrap: anywhere;">
-                <a href="/./profile/{{ .uid }}" class="a-avatar">
-                {{ if .avatar }}
-                    <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar">
-                {{ else }}
-                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar">
-                {{ end }}
-                </a>
-
-                <div>
-                    <a href="/./profile/{{ .uid }}"  style="font-size: 20px;">{{ .username }}</a> <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .create_time }}</span>
-                    <br>
-                    <span style="white-space: pre-line;">{{ .message }}</span>
-                </div>
-            </div>
-
-            {{ if .sign_text }}
-                <div class="sign-container">
-                    <span>{{ .sign_text }}</span>
-                </div>
-            {{ end }}
-        </li>
+        {{ range $.Messages }}
+{{ template "message" . }}
         {{ end }}
     </ul>
 
     <label>
-        {{ if .call_paginator }}
+        {{ if $.PaginatorIsActivated }}
         <div class="paginator-and-text-container">
-            {{ if .Authorized }}
+            {{ if $.Authorized }}
             <span class="nav-mobile"> Введите своё сообщение: </span>
             {{ end }}
 
-            {{ if .call_paginator }}
+            {{ if $.PaginatorIsActivated }}
             <div class="paginator-container">
-                {{ if .paginator_left }}
-                <a class="paginator-button" href="/./topics/{{ $.topic_id }}/?page={{ .paginator_left }}">‹</a>
+                {{ if $.PaginatorLeft }}
+                <a class="paginator-button" href="/./topics/{{ $.Id }}/?page={{ $.PaginatorLeft }}">‹</a>
                 {{ else }}
                 <a class="paginator-button paginator-block">‹</a>
                 {{ end }}
 
-                {{ range .paginator }}
-                <a class="paginator-button" href="/./topics/{{ $.topic_id }}/?page={{ . }}">{{ . }}</a>
+                {{ range $.Paginator }}
+                <a class="paginator-button" href="/./topics/{{ $.Id }}/?page={{ . }}">{{ . }}</a>
                 {{ end }}
 
-                {{ if .paginator_right }}
-                <a class="paginator-button" href="/./topics/{{ $.topic_id }}/?page={{ .paginator_right }}">›</a>
+                {{ if $.PaginatorRight }}
+                <a class="paginator-button" href="/./topics/{{ $.Id }}/?page={{ $.PaginatorRight }}">›</a>
                 {{ else }}
                 <a class="paginator-button paginator-block">›</a>
                 {{ end }}
@@ -57,15 +35,15 @@
             {{ end }}
         </div>
         {{ else }}
-            {{ if .Authorized }}
+            {{ if $.Authorized }}
             <span> Введите своё сообщение: </span>
             {{ end }}
         {{ end }}
-        {{ if .Authorized }}
+        {{ if $.Authorized }}
         <textarea class="message-textarea" id="message-textarea"></textarea>
         {{ end }}
     </label>
-    {{ if .Authorized }}
+    {{ if $.Authorized }}
     <br>
     <button id="send-message">Отправить</button>
     <div id="error-msg"></div>

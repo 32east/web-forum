@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"math"
-	"time"
 	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/system/db"
@@ -22,9 +21,8 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 		return nil, nil, paginatorMessages, err
 	}
 
-	fmt.Print("Querying paginator... ")
-	startTime := time.Now()
 	var topicsCount float64
+
 	queryRow := tx.QueryRow(ctx, queryCount)
 	countMessagesErr := queryRow.Scan(&topicsCount)
 
@@ -39,21 +37,32 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 		page = 1
 	}
 
+	var whereStr string
+
+	if id != -1 {
+		whereStr = fmt.Sprintf("where %s = $1", columnName)
+	}
+
 	fmtQuery := fmt.Sprintf(`select %s
 	from %s
 	where id in (
 		select id from (
 			select id, row_number() over(order by id)
 			from %s
-			where %s=$1
+			%s
 			offset %d
 			limit %d
 		)
 		order by id
 	)
-	order by id;`, outputColumns, tableName, tableName, columnName, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages)
-	rows, err = tx.Query(ctx, fmtQuery, id)
-	fmt.Printf("> %dms\n", time.Now().Sub(startTime).Milliseconds())
+	order by id;`, outputColumns, tableName, tableName, whereStr, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages)
+
+	fmt.Println(fmtQuery)
+	if id == -1 {
+		rows, err = tx.Query(ctx, fmtQuery)
+	} else {
+		rows, err = tx.Query(ctx, fmtQuery, id)
+	}
 
 	if err != nil {
 		return nil, nil, paginatorMessages, err
@@ -61,6 +70,7 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 
 	paginatorMessages.CurrentPage = page
 	paginatorMessages.AllPages = int(pagesCount)
+
 	return tx, rows, paginatorMessages, nil
 }
 

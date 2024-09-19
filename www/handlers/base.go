@@ -27,6 +27,10 @@ func Base(stdRequest *http.Request) (map[string]interface{}, *account.Account) {
 		return infoToSend, accountData
 	}
 
+	if accountData.IsAdmin {
+		infoToSend["IsAdmin"] = true
+	}
+
 	infoToSend["Authorized"] = true
 	infoToSend["AccountId"] = accountData.Id
 	infoToSend["Username"] = accountData.Username

@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <title>{{ if .Title }}{{ .Title }}{{ else }}Форум{{ end }}</title>
+    <title>{{- if .Title -}}
+        {{ .Title }}
+    {{- else -}}
+        Форум
+    {{- end -}}</title>
     <link rel="stylesheet" href="/./styles/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,12 +25,12 @@
                     </ul>
                 </nav>
 
-            {{ if.Authorized }}
+            {{ if $.Authorized }}
             <a id="menu-button" class="login-button profile-button">
-                {{ if .Avatar }}
-                <img src="/./imgs/avatars/{{ .Avatar }}" width="24" height="24" alt="avatar" style="object-fit: cover; vertical-align: middle; border-radius: 100%; box-shadow: 0 0 1px black;">
+                {{ if $.Avatar }}
+                <img src="/./imgs/avatars/{{ $.Avatar }}" width="24" height="24" alt="avatar" style="object-fit: cover; vertical-align: middle; border-radius: 100%; box-shadow: 0 0 1px black;">
                 {{ end }}
-                <span class="nav-mobile">{{ .Username }}</span>
+                <span class="nav-mobile">{{ $.Username }}</span>
             </a>
             {{ else }}
             <a class="login-button profile-button" href="/./login">Войти</a>
@@ -39,12 +43,16 @@
         <!--<a class="forum-button-mobile menu-button" href="/./users">Юзеры</a>
         <a class="forum-button-mobile menu-button" href="/./faq">FAQ</a>
         <div class="forum-button-mobile sign-container"></div>-->
-        <a class="menu-button" href="/./profile/{{ .AccountId }}">Мой профиль</a>
+        {{ if $.IsAdmin }}
+        <a class="menu-button" href="/./admin">Админ-панель</a>
+        <div class="sign-container"></div>
+        {{ end }}
+        <a class="menu-button" href="/./profile/{{ $.AccountId }}">Мой профиль</a>
         <a class="menu-button" id="settings-button" href="/./profile/settings">Изменить профиль</a>
         <a class="menu-button" id="logout-button">Выйти с аккаунта</a>
     </div>
     <div class="page">
-        {{ .Content }}
+        {{- $.Content -}}
     </div>
 </body>
 </html>

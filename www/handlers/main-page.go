@@ -77,8 +77,7 @@ select
 	}
 
 	templates.ContentAdd(stdRequest, templates.Forum, map[string]interface{}{
-		"categorys":          categorys,
-		"categorys_is_empty": len(*categorys) == 0,
-		"LastMessages":       sliceMessages,
+		"Categorys":    categorys,
+		"LastMessages": sliceMessages,
 	})
 }

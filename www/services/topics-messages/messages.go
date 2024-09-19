@@ -54,10 +54,10 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 		}
 
 		messageInfo := map[string]interface{}{
-			"uid":         msg.CreatorId,
-			"username":    acc.Username,
-			"message":     msg.Message,
-			"create_time": msg.CreateTime.Format("2006-01-02 15:04:05"),
+			"Id":         msg.CreatorId,
+			"Username":   acc.Username,
+			"Message":    msg.Message,
+			"CreateTime": msg.CreateTime.Format("2006-01-02 15:04:05"),
 		}
 
 		if msg.UpdateTime.Valid {
@@ -65,11 +65,11 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 		}
 
 		if acc.Avatar.Valid {
-			messageInfo["avatar"] = acc.Avatar.String
+			messageInfo["Avatar"] = acc.Avatar.String
 		}
 
 		if acc.SignText.Valid {
-			messageInfo["sign_text"] = acc.SignText.String
+			messageInfo["SignText"] = acc.SignText.String
 		}
 
 		paginatorMessages.Objects = append(paginatorMessages.Objects, messageInfo)

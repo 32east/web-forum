@@ -1,0 +1,25 @@
+{{ define "message" }}
+<li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
+    <div style="display: flex; overflow-wrap: anywhere;">
+        <a href="/./profile/{{ .Id }}" class="a-avatar">
+            {{ if .avatar }}
+            <img src="/./imgs/avatars/{{ .Avatar }}" loading="lazy" alt="{{ .Username }} avatar" class="avatar">
+            {{ else }}
+            <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .Username }} avatar" class="avatar">
+            {{ end }}
+        </a>
+
+        <div>
+            <a href="/./profile/{{ .Id }}"  style="font-size: 20px;">{{ .Username }}</a> <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .CreateTime }}</span>
+            <br>
+            <span style="white-space: pre-line;">{{ .Message }}</span>
+        </div>
+    </div>
+
+    {{ if .SignText }}
+    <div class="sign-container">
+        <span>{{ .SignText }}</span>
+    </div>
+    {{ end }}
+</li>
+{{ end }}

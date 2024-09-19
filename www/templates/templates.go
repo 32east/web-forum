@@ -2,7 +2,6 @@ package templates
 
 import (
 	"bytes"
-	"context"
 	"html/template"
 	"net/http"
 	"reflect"
@@ -33,28 +32,19 @@ func ContentAdd(reader *http.Request, tmpl *template.Template, content any) {
 	InfoToSend["Content"] = template.HTML(newBytesBuffer.String())
 }
 
-func Push404(reader *http.Request) {
-	rCtx := reader.Context()
-	writer := rCtx.Value("Writer").(http.ResponseWriter)
-	http.NotFound(writer, reader)
-	rCtx = context.WithValue(rCtx, "BlockExecute", true)
-	*reader = *reader.WithContext(rCtx)
-}
-
 var Index = Prepare("frontend/forum/index.html")
 var LoginPage = Prepare("frontend/forum/login.html")
 var RegisterPage = Prepare("frontend/forum/register.html")
 var Forum = Prepare("frontend/forum/forum.html")
-var Topics = Prepare("frontend/forum/topics.html")
+var Topics = Prepare("frontend/forum/topics.html", "frontend/common/topic.html")
 var FAQ = Prepare("frontend/forum/faq.html")
 var Users = Prepare("frontend/forum/users.html")
 
-var TopicPage = Prepare("frontend/forum/topic.html", "frontend/forum/topic-textarea.html")
+var TopicPage = Prepare("frontend/forum/topic.html", "frontend/common/message.html")
 
-var ProfileSettings = Prepare("frontend/forum/profile-settings.html", "frontend/forum/not-authorized.html")
-var CreateNewTopic = Prepare("frontend/forum/create-new-topic.html", "frontend/forum/not-authorized.html")
-var Profile = Prepare("frontend/forum/profile.html", "frontend/forum/not-authorized.html")
+var ProfileSettings = Prepare("frontend/forum/profile-settings.html", "frontend/common/not-authorized.html")
+var CreateNewTopic = Prepare("frontend/forum/create-new-topic.html", "frontend/common/not-authorized.html")
+var Profile = Prepare("frontend/forum/profile.html", "frontend/common/not-authorized.html")
 
 var AdminMain = Prepare("frontend/admin/index.html", "frontend/admin/main.html")
-var AdminCategories = Prepare("frontend/admin/index.html", "frontend/admin/categories/categories.html")
-var AdminCreateCategory = Prepare("frontend/admin/index.html", "frontend/admin/categories/create.html")
+var AdminCategories = Prepare("frontend/admin/index.html", "frontend/admin/categories.html")

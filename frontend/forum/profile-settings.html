@@ -1,34 +1,34 @@
-{{if .Authorized }}
+{{if $.Authorized }}
 <div class="forum-list">
     <h2>Настройки профиля</h2>
 
     <div style="width: auto;">
-        {{ if .Email }}
+        {{ if $.Email }}
     <label class="profile-settings-label">
-        Текущая электронная почта: {{ .Email }}
+        Текущая электронная почта: {{ $.Email }}
     </label>
         {{ end }}
 
     <label class="profile-settings-label">
         Введите ваш юзернейм:
-        <input class="left-right-5px" placeholder="Юзернейм" {{ if .Username }} value="{{ .Username }}" {{ end }}>
+        <input class="left-right-5px" placeholder="Юзернейм" {{ if $.Username }} value="{{ $.Username }}" {{ end }}>
     </label>
 
     <label class="profile-settings-label">
         Введите ваше описание:
-            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="Текст описания" id="description" name="description">{{ if .Description }}{{ .Description }}{{ end }}</textarea>
+            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="Текст описания" id="description" name="description">{{ if $.Description }}{{ $.Description }}{{ end }}</textarea>
     </label>
 
         <label class="profile-settings-label">
             Введите текст подписи:
-            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="Текст подписи" id="signText" name="signText">{{ if .SignText }}{{ .SignText }}{{ end }}</textarea>
+            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="Текст подписи" id="signText" name="signText">{{ if $.SignText }}{{ $.SignText }}{{ end }}</textarea>
         </label>
 
-        {{ if .Avatar }}
+        {{ if $.Avatar }}
         <div style="display: flex;">
             <label class="profile-settings-label" style="margin: 5px 0; ">
                 Текущая аватарка:
-                <img class="avatar" width="128" height="128" style="margin: 0 5px; height: 100%;" src="/./imgs/avatars/{{ .Avatar }}" alt="avatar">
+                <img class="avatar" width="128" height="128" style="margin: 0 5px; height: 100%;" src="/./imgs/avatars/{{ $.Avatar }}" alt="avatar">
             </label>
 
             <button id="remove-avatar-button" style="height: 24px; margin: 10px 0;">Удалить</button>
@@ -43,8 +43,6 @@
     <button id="save-settings" class="up-5px"> Сохранить </button>
     </div>
 </div>
-
-
 {{ else }}
 {{ template "not-authorized" }}
 {{ end }}

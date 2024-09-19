@@ -14,11 +14,19 @@ var ctx = context.Background()
 func Get(forumId int, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics.Get"
 
-	queryCount := fmt.Sprintf("select topics_count from forums where id = %d", forumId)
+	var queryCount string
+
+	if forumId == -1 {
+		queryCount = "select count(*) from topics;"
+	} else {
+		queryCount = fmt.Sprintf("select topics_count from forums where id = %d;", forumId)
+	}
+
 	tx, rows, topics, err := paginator.Query("topics",
 		"id, forum_id, topic_name, created_by, create_time, update_time, message_count",
 		"forum_id",
 		forumId, page, queryCount)
+
 	defer tx.Commit(ctx)
 
 	if err != nil {
@@ -63,19 +71,19 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 		}
 
 		aboutTopic := map[string]interface{}{
-			"topic_id":    topic.Id,
-			"forum_id":    forumId,
-			"topic_name":  topic.Name,
-			"username":    creatorAccount.Username,
-			"create_time": topic.CreateTime.Format("2006-01-02 15:04:05"),
-			"update_time": updateTime,
+			"Id":              topic.Id,
+			"Name":            topic.Name,
+			"ForumId":         forumId,
+			"CreatorUsername": creatorAccount.Username,
+			"CreateTime":      topic.CreateTime.Format("2006-01-02 15:04:05"),
+			"UpdateTime":      updateTime,
 
 			// Поскольку 1 сообщение - это сообщение самого топика.
-			"message_count": topic.MessageCount,
+			"MessageCount": topic.MessageCount,
 		}
 
 		if creatorAccount.Avatar.Valid {
-			aboutTopic["avatar"] = creatorAccount.Avatar.String
+			aboutTopic["Avatar"] = creatorAccount.Avatar.String
 		}
 
 		topics.Objects = append(topics.Objects, aboutTopic)

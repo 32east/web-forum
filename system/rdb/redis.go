@@ -16,7 +16,6 @@ func TryToConnect() *redis.Client {
 	redisDb, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 
 	if err != nil {
-
 		panic(err)
 	}
 
@@ -42,7 +41,7 @@ func ConnectToRedis() *redis.Client {
 		return RedisDB
 	}
 
-	newTicker := time.NewTicker(time.Second)
+	newTicker := time.NewTicker(time.Second * 3)
 
 	for {
 		select {

@@ -21,13 +21,13 @@ func TopicCreate(stdRequest *http.Request) {
 		forumId := output.Id
 
 		categorys = append(categorys, map[string]interface{}{
-			"forum_name":  output.Name,
-			"forum_id":    output.Id,
-			"is_selected": fmt.Sprint(forumId) == currentCategory,
+			"Id":         output.Id,
+			"Name":       output.Name,
+			"IsSelected": fmt.Sprint(forumId) == currentCategory,
 		})
 	}
 
 	templates.ContentAdd(stdRequest, templates.CreateNewTopic, map[string]interface{}{
-		"categorys": categorys,
+		"Categorys": categorys,
 	})
 }

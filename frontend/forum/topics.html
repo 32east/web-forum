@@ -1,54 +1,31 @@
 <div class="forum-list">
     <div style="display: flex;">
-        <h2 style="margin: 0;">{{ .forum_name }}</h2>
-        {{ if .Authorized }}
-        <a href="/./topic/create?category={{ $.forum_id }}" style="text-align: right;line-height:32px;margin: 0 0 0 auto;"> Создать новый топик </a>
+        <h2 style="margin: 0;">{{ $.Name }}</h2>
+        {{ if $.Authorized }}
+        <a href="/./topic/create?category={{ $.Id }}" style="text-align: right;line-height:32px;margin: 0 0 0 auto;"> Создать новый топик </a>
         {{ end }}
     </div>
-    <p style="padding-bottom: 5px;">{{.Description}}</p>
+    <p style="padding-bottom: 5px;">{{ $.Description }}</p>
 
     <ul>
-        {{ if .category_is_empty }}
-        <div class="not-authorized-container">
-            <span>В данный момент топиков нет.</span>
-            <span>Будьте первым, кто оставит след в этой истории!</span>
-        </div>
-        {{ else }}
-            {{ range .topics}}
-            <li class="li-topic-container">
-                <a class="topic-container" href="/./topics/{{ .topic_id }}/">
-                    {{ if .avatar }}
-                    <img src="/./imgs/avatars/{{ .avatar }}" loading="lazy" alt="{{ .username }} avatar" class="avatar a-avatar">
-                    {{ else }}
-                    <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .username }} avatar" class="avatar a-avatar">
-                    {{ end }}
-
-                    <div>
-                        <span style="font-size: 24px;">{{ .topic_name }}</span>
-                        <br>
-                        <span>Создал: {{ .username }}</span> <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .create_time }}</span>
-                        <br>
-                        <span>Сообщений в теме: {{ .message_count }}</span>
-                    </div>
-                </a>
-            </li>
-            {{ end }}
-        {{ end }}
+{{ range $.Topics }}
+    {{ template "topic" . }}
+{{ end }}
     </ul>
 
-    {{ if .call_paginator }}
-        {{ if .paginator_left }}
-        <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_left }}">‹</a>
+    {{ if $.PaginatorIsActivated }}
+        {{ if $.PaginatorLeft }}
+        <a class="paginator-button" href="/./category/{{ $.Id }}/?page={{ $.PaginatorLeft }}">‹</a>
         {{ else }}
         <a class="paginator-button paginator-block">‹</a>
         {{ end }}
 
-        {{ range .paginator }}
-            <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ . }}">{{ . }}</a>
+        {{ range .Paginator }}
+            <a class="paginator-button" href="/./category/{{ $.Id }}/?page={{ . }}">{{ . }}</a>
         {{ end }}
 
-        {{ if .paginator_right }}
-        <a class="paginator-button" href="/./category/{{ $.forum_id }}/?page={{ .paginator_right }}">›</a>
+        {{ if .PaginatorRight }}
+        <a class="paginator-button" href="/./category/{{ $.Id }}/?page={{ .PaginatorRight }}">›</a>
         {{ else }}
         <a class="paginator-button paginator-block">›</a>
         {{ end }}

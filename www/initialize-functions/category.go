@@ -29,21 +29,21 @@ func Categorys() {
 		finalPaginator := paginator.Construct(*topics)
 
 		contentToSend := map[string]interface{}{
-			"forum_id":       forumId,
-			"forum_name":     output.Name,
-			"Description":    output.Description,
-			"topics":         topics.Objects,
-			"call_paginator": topics.AllPages > 1,
-			"current_page":   currentPageInt,
-			"paginator":      finalPaginator.PagesArray,
+			"Id":                   forumId,
+			"Name":                 output.Name,
+			"Description":          output.Description,
+			"Topics":               topics.Objects,
+			"PaginatorIsActivated": topics.AllPages > 1,
+			"Paginator":            finalPaginator.PagesArray,
+			"CurrentPage":          currentPageInt,
 		}
 
 		if finalPaginator.Left.Activated {
-			contentToSend["paginator_left"] = finalPaginator.Left.WhichPage
+			contentToSend["PaginatorLeft"] = finalPaginator.Left.WhichPage
 		}
 
 		if finalPaginator.Right.Activated {
-			contentToSend["paginator_right"] = finalPaginator.Right.WhichPage
+			contentToSend["PaginatorRight"] = finalPaginator.Right.WhichPage
 		}
 
 		templates.ContentAdd(r, templates.Topics, contentToSend)

@@ -28,7 +28,7 @@ const HowMuchPagesWillBeVisibleInPaginator = 9 // Только нечётные 
 var HmacSecret = []byte(os.Getenv("HMAC_SECRET"))
 
 type Category struct {
-	Id          int
+	Id          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	TopicsCount int

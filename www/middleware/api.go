@@ -29,7 +29,7 @@ func API(uri string, newFunc func(http.ResponseWriter, *http.Request, map[string
 		newFunc(writer, reader, answer)
 
 		if answer["success"] != nil && !answer["success"].(bool) {
-			system.ErrLog(errFunction, fmt.Errorf(string(reader.RemoteAddr)+" > "+answer["reason"].(string)))
+			system.ErrLog(errFunction, fmt.Errorf("%s", answer["reason"].(string)))
 		}
 	})
 }

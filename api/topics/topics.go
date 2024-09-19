@@ -47,10 +47,16 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	scanTopicId := -1
 
 	tx, err := db.Postgres.Begin(ctx)
-	row := tx.QueryRow(ctx, "SELECT id FROM topics WHERE id = $1;", topicId).Scan(&scanTopicId)
 
-	if row != nil {
-		answer["success"], answer["reason"] = false, "topic not founded"
+	if err != nil {
+		answer["success"], answer["reason"] = false, err.Error()
+		return
+	}
+
+	errScan := tx.QueryRow(ctx, "select id from topics where id = $1;", topicId).Scan(&scanTopicId)
+
+	if errScan != nil {
+		answer["success"], answer["reason"] = false, errScan.Error()
 		return
 	}
 
@@ -64,11 +70,6 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 			tx.Commit(ctx)
 		}
 	}()
-
-	if err != nil {
-		answer["success"], answer["reason"] = false, err.Error()
-		return
-	}
 
 	_, queryErr := tx.Exec(ctx, `insert into messages(topic_id, account_id, message, create_time, update_time) values ($1, $2, $3, current_timestamp, NULL)`, topicId, accountId, msgInsert)
 
@@ -144,14 +145,14 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 		}
 	}()
 
-	row := tx.QueryRow(context.Background(), "SELECT id FROM forums WHERE id = $1;", categoryId).Scan(&scanCategoryId)
+	row := tx.QueryRow(ctx, "select id from forums where id = $1;", categoryId).Scan(&scanCategoryId)
 
 	if row != nil {
 		answer["success"], answer["reason"] = false, "category not founded"
 		return
 	}
 
-	queryErr := tx.QueryRow(context.Background(), "INSERT INTO topics (forum_id, topic_name, created_by, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL) returning id;", categoryId, name, accountId)
+	queryErr := tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time) values ($1, $2, $3, now()) returning id;", categoryId, name, accountId)
 
 	lastInsertId := -1
 	errScan := queryErr.Scan(&lastInsertId)
@@ -163,16 +164,14 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	}
 
 	msg = internal.FormatString(msg)
-	_, err2Scan := tx.Exec(context.Background(), "INSERT INTO messages (topic_id, account_id, message, create_time, update_time) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, NULL)", lastInsertId, accountId, msg)
-
-	if err2Scan != nil {
+	if _, err2Scan := tx.Exec(ctx, "insert into messages (topic_id, account_id, message, create_time) values ($1, $2, $3, now())", lastInsertId, accountId, msg); err2Scan != nil {
 		answer["success"], answer["reason"] = false, err2Scan.Error()
 
 		return
 	}
 
 	go func() {
-		db.Postgres.Exec(context.Background(), "UPDATE forums SET topics_count = topics_count + 1 WHERE id = $1;", categoryId)
+		db.Postgres.Exec(ctx, "update forums set topics_count = topics_count + 1 where id = $1;", categoryId)
 	}()
 
 	answer["success"], answer["redirect"] = true, fmt.Sprintf("/topics/%d", lastInsertId)

@@ -193,11 +193,11 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 	tx, err := db.Postgres.Begin(ctx)
 
-	defer func(tx *pgx.Tx) {
+	defer func(tx pgx.Tx) {
 		if answer["success"] == false {
-			(*tx).Rollback(ctx)
+			tx.Rollback(ctx)
 		}
-	}(&tx)
+	}(tx)
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, err.Error()
@@ -205,6 +205,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		return
 	}
 
+	// Может потом переписать??
 	for key, value := range valuesToChange {
 		formatQuery := fmt.Sprintf("UPDATE users SET %s = $1 WHERE id = $2;", key)
 		_, queryErr := tx.Exec(ctx, formatQuery, value, accountData.Id)

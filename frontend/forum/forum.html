@@ -3,28 +3,20 @@
         <div class="razdelenie-govna">
             <div class="category-menu">
                 <p style="padding-bottom: 5px;">Категории:</p>
-            {{ if .categorys_is_empty }}
-            <div class="not-authorized-container">
-                <p>В данный момент категорий нет.</p>
-            </div>
-            {{ else }}
-                {{ range .categorys}}
+                {{ range $.Categorys }}
                 <li class="li-topic-container">
                     <a class="topic-container" href="/./category/{{ .Id }}">
                         <div>
                             <span>{{ .Name }}</span>
-                            <!--<br>
-                            <span>{{ .Description }}</span>-->
                         </div>
                     </a>
                 </li>
                 {{ end }}
-            {{ end }}
            </div>
 
             <div style="width:100%;">
                 <p style="padding-bottom: 5px;">Последние сообщения:</p>
-        {{ range .LastMessages }}
+        {{ range $.LastMessages }}
                 <li class="li-topic-container">
                     <a class="topic-container" href="/./topics/{{ .TopicId }}/">
                         <div>

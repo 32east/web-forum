@@ -1,35 +1,35 @@
 <div class="forum-list">
     <div style="display: flex;border: 1px solid rgb(200, 200, 200);padding:10px;">
-        {{ if .ProfileAvatar }}
-        <img src="/./imgs/avatars/{{ .ProfileAvatar }}" loading="lazy" alt="{{ .ProfileUsername }} avatar" class="avatar-in-profile-page">
+        {{ if $.ProfileAvatar }}
+        <img src="/./imgs/avatars/{{ .ProfileAvatar }}" loading="lazy" alt="{{ $.ProfileUsername }} avatar" class="avatar-in-profile-page">
         {{ else }}
-        <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .ProfileUsername }} avatar" class="avatar-in-profile-page">
+        <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ $.ProfileUsername }} avatar" class="avatar-in-profile-page">
         {{ end }}
         <div style="display: block;">
-            <h1 class="profile-username">{{ .ProfileUsername }}</h1>
-            {{ if .ProfileDescription }}
-                <span style="white-space: pre-line;">{{ .ProfileDescription }}</span>
+            <h1 class="profile-username">{{ $.ProfileUsername }}</h1>
+            {{ if $.ProfileDescription }}
+                <span style="white-space: pre-line;">{{ $.ProfileDescription }}</span>
             {{ end }}
             <div class="sign-container">
-                <p>Пол: {{ .ProfileSex }}</p>
-            <p>С нами уже: {{ .ProfileCreatedAt }}</p>
+                <p>Пол: {{ $.ProfileSex }}</p>
+            <p>С нами уже: {{ $.ProfileCreatedAt }}</p>
             </div>
         </div>
     </div>
-    {{ if .ProfileSignText }}
+    {{ if $.ProfileSignText }}
     <div style="margin: 10px 0 2px 0;border: 1px solid rgb(200, 200, 200);padding: 5px;overflow: auto;">
     <p>Личная подпись:</p>
     <div class="sign-container">
-        <p>{{ .ProfileSignText }}</p>
+        <p>{{ $.ProfileSignText }}</p>
     </div>
     </div>
     {{ end }}
     <p style="margin: 10px 0 2px 0">Последние сообщения:</p>
         <ul>
-            {{ if .ProfileNoMessages }}
+            {{ if $.ProfileNoMessages }}
             <p style="margin: 10px 0 2px 0">Данная персона ничего не писала :<</p>
             {{ else }}
-        {{ range .ProfileMessages }}
+        {{ range $.ProfileMessages }}
             <li class="li-topic-container">
                 <a class="topic-container" href="/./topics/{{ .TopicId }}/">
                     {{ if $.ProfileAvatar }}

@@ -1,0 +1,51 @@
+{{ define "content" }}
+<div style="display: flex;">
+    <h1>Категории</h1>
+    <a href="#" id="create-new-category-btn" style="text-align: right;line-height:38px;margin: 0 0 0 auto;"> Создать новую категорию </a>
+</div>
+
+<div id="create-new-category" class="forum-list object-hide" style="margin: 0 0 5px 0;">
+    <div style="width: fit-content;">
+        <label class="profile-settings-label">
+            Тема:
+            <input class="left-right-5px" placeholder="введите название категории">
+        </label>
+
+        <label class="profile-settings-label">
+            Описание категории:
+            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="введите описание"></textarea>
+        </label>
+
+        <button id="create-category-btn" class="up-5px"> Создать тему </button>
+    </div>
+</div>
+
+{{ range . }}
+<li class="li-topic-container" style="background-color: rgb(240, 240, 240) !important;">
+    <a id="{{ .Id }}-a-btn" class="topic-container">
+        <div>
+            <span style="font-size: 20px;">{{ .Name }}</span>
+            <br>
+            <span>{{ .Description }}</span>
+        </div>
+    </a>
+
+    <div id="{{ .Id }}-container" class="object-hide" style="width: fit-content; padding: 0 10px 10px;">
+        <label class="profile-settings-label">
+            Тема:
+            <input type="text" class="left-right-5px" placeholder="введите название категории" value="{{ .Name }}">
+        </label>
+
+        <label class="profile-settings-label">
+            Описание категории:
+            <textarea style="font-size: 13px;max-width: 400px;height: 128px;width: 50vw;min-width: 180px;" class="left-right-5px" placeholder="введите описание">
+                {{- .Description -}}
+            </textarea>
+        </label>
+
+        <button class="save-category-settings up-5px"> Изменить категорию </button>
+        <button class="delete-category-settings up-5px"> Удалить категорию </button>
+    </div>
+</li>
+{{ end }}
+{{ end }}

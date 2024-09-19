@@ -9,6 +9,7 @@ import (
 
 var Cache *[]internal.Category
 var CacheMap = make(map[int]*internal.Category)
+var ctx = context.Background()
 
 func GetAll() (*[]internal.Category, error) {
 	if Cache != nil {
@@ -18,7 +19,7 @@ func GetAll() (*[]internal.Category, error) {
 	const errorFunction = "category.GetAll"
 
 	var forums []internal.Category
-	rows, err := db.Postgres.Query(context.Background(), "SELECT * FROM forums;")
+	rows, err := db.Postgres.Query(ctx, "SELECT * FROM forums order by id;")
 	defer rows.Close()
 
 	if err != nil {

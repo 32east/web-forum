@@ -16,9 +16,7 @@ import (
 
 var ctx = context.Background()
 
-func CreateProfilePage(accountId int) {
-	fmt.Println("Creating profile page", accountId)
-
+func Profiles() {
 	middleware.Mult("/profile/([0-9]+)", func(w http.ResponseWriter, r *http.Request, accountId int) {
 		acc, accErr := account.GetById(accountId)
 
@@ -120,25 +118,4 @@ func CreateProfilePage(accountId int) {
 
 		templates.ContentAdd(r, templates.Profile, contentToAdd)
 	})
-}
-
-func Profiles() {
-	rows, err := db.Postgres.Query(ctx, "select * from users;")
-
-	if err != nil {
-		panic(err)
-	}
-
-	for rows.Next() {
-		accountId := -1
-
-		err = rows.Scan(&accountId, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-
-		if err != nil {
-			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to initialize profile: %v", err))
-			continue
-		}
-
-		CreateProfilePage(accountId)
-	}
 }

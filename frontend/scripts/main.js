@@ -38,7 +38,12 @@ window.onload = function() {
     }
 
     document.addEventListener('click', (e) => {
-        if (e.target.hasAttribute('href')) {
+        if (e.target.id.endsWith("-a-btn"))  {
+            e.preventDefault();
+            const id = e.target.id.slice(0, e.target.id.length - ("-a-btn").length);
+            const container = document.getElementById(id + "-container");
+            container.classList.toggle("object-hide");
+        } else if (e.target.hasAttribute('href')) {
             e.preventDefault();
             const url = e.target.href;
             checkTokenValidity(() => {
@@ -253,7 +258,7 @@ window.onload = function() {
                 description: topicMessage
             };
 
-            fetch('/api/admin/category/create', {
+            fetch('/api/v1/admin/category/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -266,7 +271,7 @@ window.onload = function() {
                         window.location.href = "/admin/categories";
                     } else {
                         handleErrorAndRefreshToken(data, () => {
-                            fetch('/api/admin/category/create', {
+                            fetch('/api/v1/admin/category/create', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -298,6 +303,15 @@ window.onload = function() {
         var top  = box.top +  scrollTop - clientTop;
         var left = box.left + scrollLeft - clientLeft;
         return { top: Math.round(top), left: Math.round(left) };
+    }
+
+    var createNewCategorybtn = document.getElementById("create-new-category-btn")
+    var createNewCategopry = document.getElementById("create-new-category")
+    if (createNewCategorybtn) {
+        createNewCategorybtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            createNewCategopry.classList.toggle("object-hide");
+        });
     }
 
     // Обработчик для кнопки меню
@@ -406,7 +420,14 @@ window.onload = function() {
         sendMessageButton.addEventListener('click', (e) => {
             e.preventDefault();
             const message = document.getElementById('message-textarea').value;
-            const topicId = document.location.href.split('/')[document.location.href.split('/').length - 2];
+            var shitsplit = document.location.href.split('/');
+            var topicId = shitsplit[shitsplit.length - 1];
+
+            console.log(topicId)
+
+            if (topicId === "") {
+                topicId = shitsplit[shitsplit.length - 2]
+            }
 
             fetch('/api/send-message', {
                 method: 'POST',
@@ -453,4 +474,104 @@ window.onload = function() {
                 .catch(error => console.error('Ошибка:', error));
         });
     }
+
+    // Get all elements with class "save-category-settings"
+    const saveButtons = document.querySelectorAll('.save-category-settings');
+
+// Add event listener to each button
+    saveButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Get the parent element (the li element)
+            const li = button.closest('li');
+
+            // Get the input fields
+            const nameInput = li.querySelector('input[type="text"]');
+            const descriptionInput = li.querySelector('textarea');
+
+            // Get the ID from the parent element's ID attribute
+            const id = li.querySelector('a').id.split('-')[0];
+
+            // Create a JSON payload
+            const payload = {
+                id: Number(id),
+                name: nameInput.value,
+                description: descriptionInput.value
+            };
+
+            // Send the API request
+            fetch('/api/v1/admin/category/edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page
+                        window.location.reload();
+                    } else {
+                        // Display an error message
+                        const errorSpan = li.querySelector('.error-message');
+                        if (!errorSpan) {
+                            const errorSpan = document.createElement('span');
+                            errorSpan.className = 'error-message';
+                            li.appendChild(errorSpan);
+                        }
+                        errorSpan.textContent = 'Error: ' + data.error;
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        });
+    });
+
+    // Get all elements with class "save-category-settings"
+    const deleteButtons = document.querySelectorAll('.delete-category-settings');
+
+// Add event listener to each button
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Get the parent element (the li element)
+            const li = button.closest('li');
+
+            // Get the ID from the parent element's ID attribute
+            const id = li.querySelector('a').id.split('-')[0];
+
+            // Create a JSON payload
+            const payload = {
+                id: Number(id),
+            };
+
+            // Send the API request
+            fetch('/api/v1/admin/category/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page
+                        window.location.reload();
+                    } else {
+                        // Display an error message
+                        const errorSpan = li.querySelector('.error-message');
+                        if (!errorSpan) {
+                            const errorSpan = document.createElement('span');
+                            errorSpan.className = 'error-message';
+                            li.appendChild(errorSpan);
+                        }
+                        errorSpan.textContent = 'Error: ' + data.error;
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        });
+    });
 };

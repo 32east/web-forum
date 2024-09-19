@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
 	"os"
 	"time"
 )
@@ -15,12 +16,14 @@ func TryToConnect() *pgxpool.Pool {
 	conn, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
 
 	if err != nil {
+		log.Println(err)
 		return nil
 	}
 
 	pingErr := conn.Ping(ctx)
 
 	if pingErr != nil {
+		log.Println(pingErr)
 		return nil
 	}
 
@@ -34,7 +37,7 @@ func ConnectDatabase() *pgxpool.Pool {
 		return Postgres
 	}
 
-	newTicker := time.NewTicker(time.Nanosecond)
+	newTicker := time.NewTicker(time.Second * 1)
 
 	for {
 		select {

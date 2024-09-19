@@ -13,7 +13,6 @@ import (
 	"web-forum/internal"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
-	initialize_functions "web-forum/www/initialize-functions"
 	"web-forum/www/services/account"
 	jwt_token "web-forum/www/services/jwt-token"
 )
@@ -136,21 +135,14 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 	newSha256Writer.Write([]byte(passwordStr))
 	hexPassword := hex.EncodeToString(newSha256Writer.Sum(nil))
 
-	row := db.Postgres.QueryRow(ctx, "INSERT INTO users(login, password, username, email, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) returning id;",
+	if _, execErr := db.Postgres.Exec(ctx, "insert into users(login, password, username, email, created_at) values ($1, $2, $3, $4, CURRENT_TIMESTAMP);",
 		loginStr,
 		hexPassword,
 		username,
-		email)
-
-	var accountId int
-	idErr := row.Scan(&accountId)
-
-	if idErr != nil {
-		answer["success"], answer["reason"] = false, idErr.Error()
+		email); execErr != nil {
+		answer["success"], answer["reason"] = false, execErr.Error()
 		return
 	}
-
-	initialize_functions.CreateProfilePage(accountId)
 
 	answer["success"] = true
 }
