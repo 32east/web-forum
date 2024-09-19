@@ -64,10 +64,6 @@ func Profiles() {
 			contentToAdd["ProfileDescription"] = acc.Description.String
 		}
 
-		startTime := time.Now()
-
-		fmt.Print("Querying profile...")
-
 		tx, err := db.Postgres.Begin(ctx)
 		defer tx.Commit(ctx)
 
@@ -91,8 +87,6 @@ func Profiles() {
 		inner join topics as t on m.topic_id = t.id
 		order by m.create_time desc;
 		`, acc.Id)
-
-		fmt.Printf("> %dms\n", time.Since(startTime).Milliseconds())
 
 		if errMessages != nil {
 			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to fetch messages: %v", errMessages))

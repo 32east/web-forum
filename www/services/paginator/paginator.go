@@ -57,7 +57,6 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 	)
 	order by id;`, outputColumns, tableName, tableName, whereStr, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages)
 
-	fmt.Println(fmtQuery)
 	if id == -1 {
 		rows, err = tx.Query(ctx, fmtQuery)
 	} else {

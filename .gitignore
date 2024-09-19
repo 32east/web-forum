@@ -1,3 +1,5 @@
 /frontend/imgs/avatars/*
 /go_build_web_forum_main_go.exe
+Dockerfile
+.env
 

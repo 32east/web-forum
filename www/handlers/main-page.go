@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,6 +20,9 @@ type LastMessage struct {
 
 	CreatorId  int
 	CreateTime string
+
+	MessageCreatorAvatar sql.NullString
+	MessageBy            string
 }
 
 func MainPage(stdRequest *http.Request) {
@@ -30,8 +34,6 @@ func MainPage(stdRequest *http.Request) {
 		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
 	}
 
-	startTime := time.Now()
-	fmt.Print("Querying main page... ")
 	lastMessages, errMessages := db.Postgres.Query(ctx, `
 select 
     m.topic_id,
@@ -40,10 +42,13 @@ select
     u.username,
 
     m.account_id,
-    m.create_time
+    m.create_time,
+    uMessage.avatar,
+    uMessage.username
   from messages as m
   inner join topics as t on m.topic_id = t.id
   inner join users as u on u.id = t.created_by
+  inner join users as uMessage on uMessage.id = m.account_id
   where (m.topic_id, m.id) in (
     select topic_id, max(id) 
     from messages 
@@ -53,7 +58,7 @@ select
   order by m.id desc
   limit 10;
 	`)
-	fmt.Printf("> %dms\n", time.Now().Sub(startTime).Milliseconds())
+
 	var sliceMessages []LastMessage
 
 	if errMessages != nil {
@@ -61,9 +66,10 @@ select
 	} else {
 		for lastMessages.Next() {
 			var createTime time.Time
+
 			lastMessage := LastMessage{}
 
-			err = lastMessages.Scan(&lastMessage.TopicId, &lastMessage.TopicName, &lastMessage.TopicMessageCount, &lastMessage.TopicCreatedBy, &lastMessage.CreatorId, &createTime)
+			err = lastMessages.Scan(&lastMessage.TopicId, &lastMessage.TopicName, &lastMessage.TopicMessageCount, &lastMessage.TopicCreatedBy, &lastMessage.CreatorId, &createTime, &lastMessage.MessageCreatorAvatar, &lastMessage.MessageBy)
 
 			if err != nil {
 				system.ErrLog(errorFunction, errMessages)

@@ -19,12 +19,27 @@
         {{ range $.LastMessages }}
                 <li class="li-topic-container">
                     <a class="topic-container" href="/./topics/{{ .TopicId }}/">
-                        <div>
+                        <div style="width: 100%">
                             <span style="font-size: 24px;">{{ .TopicName }}</span>
                             <br>
-                            <span>Создал: {{ .TopicCreatedBy }}</span>
-                            <p style="color: rgb(200, 200, 200); font-size: 14px;">Последняя активность: {{ .CreateTime }}</p>
-                            <span>Сообщений в теме: {{ .TopicMessageCount }}</span>
+                            <p>Создал: {{ .TopicCreatedBy }}</p>
+                            <p>Сообщений в теме: {{ .TopicMessageCount }}</p>
+                        </div>
+
+
+                        <div class="div-flex-last-message">
+                            <div class="div-block-last-message-text">
+                                <p class="topic-last-message-text">{{ .MessageBy }}</p>
+                                <p style="width: 80%;width: 80%;
+  margin: auto;
+  right: -10%;
+  position: relative;" class="topic-last-message-text">{{ .CreateTime }}</p>
+                            </div>
+                            {{ if .MessageCreatorAvatar.Valid }}
+                            <img src="/./imgs/avatars/{{ .MessageCreatorAvatar.String }}" loading="lazy" alt="{{ .MessageCreatorAvatar }} avatar" class="avatar-main-page a-avatar">
+                            {{ else }}
+                            <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .MessageCreatorAvatar }} avatar" class="avatar-main-page a-avatar">
+                            {{ end }}
                         </div>
                     </a>
                 </li>

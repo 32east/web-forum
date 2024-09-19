@@ -2,7 +2,7 @@
 <li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
     <div style="display: flex; overflow-wrap: anywhere;">
         <a href="/./profile/{{ .Id }}" class="a-avatar">
-            {{ if .avatar }}
+            {{ if .Avatar }}
             <img src="/./imgs/avatars/{{ .Avatar }}" loading="lazy" alt="{{ .Username }} avatar" class="avatar">
             {{ else }}
             <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .Username }} avatar" class="avatar">

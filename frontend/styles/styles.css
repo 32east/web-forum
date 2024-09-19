@@ -244,6 +244,36 @@ a {
     background-color: white;
 }
 
+.avatar-main-page {
+    min-width: 56px;
+    max-width: 56px;
+    width: 100%;
+    height: 100%;
+    border: 1px solid rgb(200, 200, 200);
+    background-color: white;
+    margin: auto 0;
+}
+
+.div-flex-last-message {
+    width: 50%;
+    height: 100%;
+    margin: auto;
+    justify-content: end;
+    display: flex;
+}
+
+.div-block-last-message-text {
+    display: grid;
+    margin: auto 0;
+    padding: 5px;
+}
+
+.topic-last-message-text {
+    color: rgb(200, 200, 200);
+    font-size: 14px;
+    text-align: right;
+}
+
 .li-topic-container {
     border: 1px solid rgb(200, 200, 200);
     background-color: rgb(240, 240, 240);
@@ -348,7 +378,7 @@ a {
 }
 
 .category-menu {
-    width: 25%;
+    width: 250px;
     padding: 0 3px 0 0;
 }
 
@@ -372,6 +402,10 @@ a {
 }
 
 @media screen and (max-width: 750px) {
+    .div-flex-last-message {
+        display: none;
+    }
+
     .razdelenie-govna {
         display: block;
     }

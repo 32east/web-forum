@@ -3,6 +3,7 @@ package rdb
 import (
 	"context"
 	"github.com/redis/go-redis/v9"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -16,7 +17,8 @@ func TryToConnect() *redis.Client {
 	redisDb, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 
 	if err != nil {
-		panic(err)
+		log.Print(err)
+		return nil
 	}
 
 	rdb := redis.NewClient(&redis.Options{
@@ -27,11 +29,14 @@ func TryToConnect() *redis.Client {
 
 	rdbErr := rdb.Ping(ctx).Err()
 
-	if rdbErr == nil {
-		return rdb
+	if rdbErr != nil {
+		log.Print(err)
+		return nil
 	}
 
-	return nil
+	log.Print("Successfully connected to Redis")
+
+	return rdb
 }
 
 func ConnectToRedis() *redis.Client {

@@ -201,8 +201,6 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 		return
 	}
 
-	fmt.Println("Заносим в кэш: " + loginStr)
-
 	answer["success"], answer["access_token"], answer["refresh_token"] = true, accessToken, refreshToken
 	answer["access_token_exp"], answer["refresh_token_exp"] = 3600*12, refreshTokenTime
 

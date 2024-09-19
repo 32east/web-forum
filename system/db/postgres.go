@@ -27,6 +27,8 @@ func TryToConnect() *pgxpool.Pool {
 		return nil
 	}
 
+	log.Println("Successfully connected to database")
+
 	return conn
 }
 

@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -29,7 +28,6 @@ func Mult(uri string, newFunc func(writer http.ResponseWriter, r *http.Request, 
 	http.HandleFunc("/"+endUrl[1]+"/", func(writer http.ResponseWriter, reader *http.Request) {
 		infoToSend, accountData := handlers.Base(reader)
 
-		fmt.Println(reader.Header)
 		ctx := reader.Context()
 		ctx = context.WithValue(ctx, "InfoToSend", infoToSend)
 		ctx = context.WithValue(ctx, "AccountData", accountData)
