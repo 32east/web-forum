@@ -42,6 +42,7 @@ type Topic struct {
 	CreateTime   time.Time
 	UpdateTime   sql.NullTime
 	MessageCount int
+	ParentId     int
 }
 
 type Message struct {

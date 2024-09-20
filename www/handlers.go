@@ -71,6 +71,7 @@ func RegisterURLs() {
 	middleware.API("/api/profile/settings", profile.HandleSettings)
 	middleware.API("/api/topics/create", topics.HandleTopicCreate)
 
+	middleware.AdminAPI("/api/v1/admin/message/delete", "POST", admin.HandleMessageDelete)
 	middleware.AdminAPI("/api/v1/admin/category/create", "POST", admin.HandleCategoryCreate)
 	middleware.AdminAPI("/api/v1/admin/category/edit", "POST", admin.HandleCategoryEdit)
 	middleware.AdminAPI("/api/v1/admin/category/delete", "POST", admin.HandleCategoryDelete)

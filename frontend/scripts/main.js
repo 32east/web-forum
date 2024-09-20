@@ -17,7 +17,10 @@ window.onload = function() {
         return localStorage.getItem('refresh_token');
     }
 
-    function checkTokenValidity(callback) {
+
+    checkTokenValidity(function() { location.reload(); }, true)
+
+    function checkTokenValidity(callback, disableCallbackOnFail=false) {
         const accessToken = getCookie('access_token');
         try {
             const decodedToken = atob(accessToken.split('.')[1]);
@@ -28,12 +31,20 @@ window.onload = function() {
             if (currentTime > expirationTime) {
                 // Токен истек, обновляем его
                 handleErrorAndRefreshToken({ reason: 'token expired' }, callback);
-            } else {
+            } else if (!disableCallbackOnFail) {
                 callback();
             }
         } catch (error) {
             console.error('Ошибка декодирования токена:', error);
-            callback();
+
+            if (accessToken==="") {
+                handleErrorAndRefreshToken({ reason: 'token expired' }, callback);
+                console.log("refreshing...")
+            }
+
+            if (!disableCallbackOnFail) {
+                callback();
+            }
         }
     }
 
@@ -52,9 +63,47 @@ window.onload = function() {
         }
     });
 
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+
+        // Проверяем, кликнули ли на три точки
+        if (target.classList.contains('dots')) {
+            const dropdown = target.nextElementSibling;
+            dropdown.style.display = dropdown.style.display === 'none' || dropdown.style.display === '' ? 'block' : 'none';
+        }
+
+        // Закрываем dropdown, если кликнули вне его
+        if (!target.closest('.dropdown') && !target.classList.contains('dots')) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(dropdown => dropdown.style.display = 'none');
+        }
+
+        // Проверяем, кликнули ли на "Удалить сообщение"
+        if (target.classList.contains('delete-message')) {
+            const messageItem = target.closest('li');
+            const messageId = messageItem.id.split('-')[0]; // Извлекаем ID сообщения
+
+            fetch('/api/v1/admin/message/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: Number(messageId) })
+            }).then(response => response.json()).then(response => {
+                    if (response.success === true) {
+                        location.reload();
+                    }
+            });
+
+            // Закрываем выпадающий список
+            const dropdown = messageItem.querySelector('.dropdown');
+            dropdown.style.display = 'none';
+        }
+    });
+
     // Функция для обработки ошибок и обновления токенов
     function handleErrorAndRefreshToken(error, callback) {
-        if (error.reason === "token is expired" || error.reason === "not authorized") {
+        if (error.reason === "token is expired"  || error.reason === "token expired" || error.reason === "not authorized") {
             fetch('/api/refresh-token', {
                 method: 'POST',
                 headers: {
@@ -64,6 +113,7 @@ window.onload = function() {
             })
                 .then(response => response.json())
                 .then(data => {
+                    console.log(data);
                     if (data.success) {
                         // Обновляем токен доступа
                         setCookie('access_token', data.access_token, 1);

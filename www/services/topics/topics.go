@@ -23,7 +23,7 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 	}
 
 	tx, rows, topics, err := paginator.Query("topics",
-		"id, forum_id, topic_name, created_by, create_time, update_time, message_count",
+		"id, forum_id, topic_name, created_by, create_time, update_time, message_count, parent_id",
 		"forum_id",
 		forumId, page, queryCount)
 
@@ -39,7 +39,7 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 	for rows.Next() {
 		topic := internal.Topic{}
 
-		scanErr := rows.Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount)
+		scanErr := rows.Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount, &topic.ParentId)
 
 		if scanErr != nil {
 			system.ErrLog(errorFunction, scanErr)

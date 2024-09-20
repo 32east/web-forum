@@ -18,7 +18,7 @@ func Topics() {
 
 	middleware.Mult("/topics/([0-9]+)", func(w http.ResponseWriter, r *http.Request, topicId int) {
 		topic := internal.Topic{}
-		scanErr := db.Postgres.QueryRow(ctx, "select * from topics where id = $1;", topicId).Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount)
+		scanErr := db.Postgres.QueryRow(ctx, "select * from topics where id = $1;", topicId).Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount, &topic.ParentId)
 
 		if scanErr != nil {
 			middleware.Push404(w, r)
@@ -76,8 +76,4 @@ func Topics() {
 
 		templates.ContentAdd(r, templates.TopicPage, topicInfo)
 	})
-}
-
-func CreateTopic(inputTopic internal.Topic) string {
-	return ""
 }

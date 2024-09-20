@@ -1,7 +1,7 @@
 {{ define "message" }}
-<li style="border: 1px solid rgb(200, 200, 200); padding: 5px;">
+<li id="{{ .MessageId }}-a-message" style="border: 1px solid rgb(200, 200, 200); padding: 5px; position: relative;">
     <div style="display: flex; overflow-wrap: anywhere;">
-        <a href="/./profile/{{ .Id }}" class="a-avatar">
+        <a href="/./profile/{{ .CreatorId }}" class="a-avatar">
             {{ if .Avatar }}
             <img src="/./imgs/avatars/{{ .Avatar }}" loading="lazy" alt="{{ .Username }} avatar" class="avatar">
             {{ else }}
@@ -10,9 +10,16 @@
         </a>
 
         <div>
-            <a href="/./profile/{{ .Id }}"  style="font-size: 20px;">{{ .Username }}</a> <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .CreateTime }}</span>
+            <a href="/./profile/{{ .CreatorId }}" style="font-size: 20px;">{{ .Username }}</a>
+            <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .CreateTime }}</span>
             <br>
-            <span style="white-space: pre-line;">{{ .Message }}</span>
+            <span style="white-space: pre-line;" class="message-text">{{ .Message }}</span>
+            <div class="options" style="position: absolute; top: 5px; right: 5px;">
+                <span class="dots" style="cursor: pointer;">&#x2022;&#x2022;&#x2022;</span>
+                <div class="dropdown" style="width:200px;display: none; position: absolute; right: 0; background: white; border: 1px solid rgb(200, 200, 200); z-index: 1;">
+                    <div class="delete-message" style="padding: 3px; cursor: pointer; text-align: center;">Удалить сообщение</div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -152,7 +152,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 		return
 	}
 
-	queryErr := tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time) values ($1, $2, $3, now()) returning id;", categoryId, name, accountId)
+	queryErr := tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time, parent_id) values ($1, $2, $3, now(), -1) returning id;", categoryId, name, accountId)
 
 	lastInsertId := -1
 	errScan := queryErr.Scan(&lastInsertId)
@@ -164,9 +164,13 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	}
 
 	msg = internal.FormatString(msg)
-	if _, err2Scan := tx.Exec(ctx, "insert into messages (topic_id, account_id, message, create_time) values ($1, $2, $3, now())", lastInsertId, accountId, msg); err2Scan != nil {
-		answer["success"], answer["reason"] = false, err2Scan.Error()
+	msgIdQuery := tx.QueryRow(ctx, "insert into messages (topic_id, account_id, message, create_time) values ($1, $2, $3, now()) returning id;", lastInsertId, accountId, msg)
 
+	var msgId int
+	msgIdQuery.Scan(&msgId)
+
+	if _, execErr := tx.Exec(ctx, "update topics set parent_id = $1 where id = $2;", msgId, lastInsertId); execErr != nil {
+		answer["success"], answer["reason"] = false, execErr.Error()
 		return
 	}
 

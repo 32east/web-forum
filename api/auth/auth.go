@@ -207,7 +207,6 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 	http.SetCookie(writer, &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
-		Expires:  time.Now().Add(time.Hour * 24),
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -273,7 +272,7 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 		return
 	}
 
-	fmtQuery := fmt.Sprintf("insert into tokens (account_id, refresh_token, expires_at) values ($1, $2, now() + interval '%d second');", refreshTokenTime)
+	fmtQuery := fmt.Sprintf("insert into tokens (account_id, refresh_token, expiresat) values ($1, $2, now() + interval '%d second');", refreshTokenTime)
 	_, execErr = tx.Exec(ctx, fmtQuery, accountId, newRefreshToken)
 
 	if execErr != nil {
@@ -288,7 +287,6 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
-		Expires:  time.Now().Add(time.Hour * 24),
 		SameSite: http.SameSiteLaxMode,
 	})
 }

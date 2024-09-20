@@ -19,6 +19,7 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 		"id, topic_id, account_id, message, create_time, update_time",
 		"topic_id", topic.Id, page, queryCount)
 
+	fmt.Println(err)
 	defer tx.Commit(ctx)
 
 	if err != nil {
@@ -54,7 +55,8 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 		}
 
 		messageInfo := map[string]interface{}{
-			"Id":         msg.CreatorId,
+			"MessageId":  msg.Id,
+			"CreatorId":  msg.CreatorId,
 			"Username":   acc.Username,
 			"Message":    msg.Message,
 			"CreateTime": msg.CreateTime.Format("2006-01-02 15:04:05"),

@@ -1,7 +1,6 @@
 package account
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -64,7 +63,7 @@ func GetById(id int) (*Account, error) {
 		return veryFastCache.Account, nil
 	}
 
-	result, err := rdb.RedisDB.Get(context.Background(), fmt.Sprintf("aID:%d", id)).Result()
+	result, err := rdb.RedisDB.Get(ctx, fmt.Sprintf("aID:%d", id)).Result()
 
 	if err == nil {
 		outputAccount, _ := Deserialize(result)
@@ -78,7 +77,7 @@ func GetById(id int) (*Account, error) {
 	}
 
 	accountInfo := &Account{}
-	row := db.Postgres.QueryRow(context.Background(), "SELECT * FROM users WHERE id = $1;", id)
+	row := db.Postgres.QueryRow(ctx, "SELECT * FROM users WHERE id = $1;", id)
 
 	if row == nil {
 		return accountInfo, fmt.Errorf("Account not found")
@@ -103,7 +102,7 @@ func GetById(id int) (*Account, error) {
 		return accountInfo, queryErr
 	}
 
-	rdb.RedisDB.Set(context.Background(), fmt.Sprintf("aID:%d", accountInfo.Id), accountInfo.Serialize(), time.Hour).Result()
+	rdb.RedisDB.Set(ctx, fmt.Sprintf("aID:%d", accountInfo.Id), accountInfo.Serialize(), time.Hour).Result()
 
 	return accountInfo, nil
 }
@@ -112,7 +111,7 @@ func GetById(id int) (*Account, error) {
 // Использовать только по крайней необходимости.
 func GetByLogin(login string) (*Account, error) {
 	accountInfo := &Account{}
-	row := db.Postgres.QueryRow(context.Background(), "SELECT * FROM users WHERE login = $1;", login)
+	row := db.Postgres.QueryRow(ctx, "SELECT * FROM users WHERE login = $1;", login)
 
 	if row == nil {
 		return nil, fmt.Errorf("Account not found")
