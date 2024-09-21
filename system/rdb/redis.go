@@ -30,7 +30,7 @@ func TryToConnect() *redis.Client {
 	rdbErr := rdb.Ping(ctx).Err()
 
 	if rdbErr != nil {
-		log.Print(err)
+		log.Print(rdbErr)
 		return nil
 	}
 

@@ -13,6 +13,20 @@ services:
 
   redis:
     container_name: redis
-    image: "redis:7"
+    image: redis:7
     ports:
         - '6379:6379'
+
+  web-forum:
+    container_name: web-forum
+    image: golang:1.23
+    depends_on:
+      - postgresql
+      - redis
+    working_dir: /usr/src/app
+    volumes:
+      - .:/usr/src/app
+    command: >-
+      go run main.go
+    ports:
+        - '8080:8080'
