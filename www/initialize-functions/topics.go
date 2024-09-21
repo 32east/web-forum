@@ -1,10 +1,11 @@
 package initialize_functions
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 	"web-forum/internal"
+	"web-forum/system"
 	"web-forum/system/db"
 	"web-forum/www/middleware"
 	"web-forum/www/services/account"
@@ -14,7 +15,7 @@ import (
 )
 
 func Topics() {
-	const errorFunc = "InitializeTopicsPages"
+	const errorFunc = "Topics"
 
 	middleware.Mult("/topics/([0-9]+)", func(w http.ResponseWriter, r *http.Request, topicId int) {
 		topic := internal.Topic{}
@@ -43,7 +44,7 @@ func Topics() {
 		getAccount, ok := account.GetById(topic.Creator)
 
 		if ok != nil {
-			log.Fatal("фатальная ошибка при получении информации о создателе топика", topic.Creator)
+			system.ErrLog(errorFunc, fmt.Errorf("cannot find account: %d", topic.Creator))
 		}
 
 		topicInfo := map[string]interface{}{

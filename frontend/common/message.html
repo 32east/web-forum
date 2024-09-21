@@ -14,12 +14,15 @@
             <span style="color: rgb(200, 200, 200); font-size: 14px;">в {{ .CreateTime }}</span>
             <br>
             <span style="white-space: pre-line;" class="message-text">{{ .Message }}</span>
+
+            {{ if $.IsAdmin }}
             <div class="options" style="position: absolute; top: 5px; right: 5px;">
                 <span class="dots" style="cursor: pointer;">&#x2022;&#x2022;&#x2022;</span>
                 <div class="dropdown" style="width:200px;display: none; position: absolute; right: 0; background: white; border: 1px solid rgb(200, 200, 200); z-index: 1;">
                     <div class="delete-message" style="padding: 3px; cursor: pointer; text-align: center;">Удалить сообщение</div>
                 </div>
             </div>
+            {{ end }}
         </div>
     </div>
 

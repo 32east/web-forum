@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"web-forum/internal"
 	"web-forum/system/db"
+	"web-forum/system/rdb"
 	"web-forum/www/services/account"
 )
 
@@ -176,6 +177,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 
 	go func() {
 		db.Postgres.Exec(ctx, "update forums set topics_count = topics_count + 1 where id = $1;", categoryId)
+		rdb.RedisDB.Do(ctx, "incrby", "count:topics", 1)
 	}()
 
 	answer["success"], answer["redirect"] = true, fmt.Sprintf("/topics/%d", lastInsertId)

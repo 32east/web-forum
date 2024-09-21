@@ -19,10 +19,10 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 		"id, topic_id, account_id, message, create_time, update_time",
 		"topic_id", topic.Id, page, queryCount)
 
-	fmt.Println(err)
 	defer tx.Commit(ctx)
 
 	if err != nil {
+		system.ErrLog(errorFunction, err)
 		return nil, err
 	}
 

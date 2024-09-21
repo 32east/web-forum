@@ -1,6 +1,7 @@
 package www
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
@@ -9,12 +10,17 @@ import (
 	"web-forum/api/auth"
 	"web-forum/api/profile"
 	"web-forum/api/topics"
+	"web-forum/internal"
 	"web-forum/system"
+	"web-forum/system/db"
+	"web-forum/system/rdb"
 	"web-forum/www/handlers"
 	initialize_functions "web-forum/www/initialize-functions"
 	"web-forum/www/middleware"
 	"web-forum/www/services/category"
 )
+
+var ctx = context.Background()
 
 func RegisterStaticFiles(path string, urlPath string) {
 	const errorFunction = "RegisterStaticFiles"
@@ -81,6 +87,17 @@ func RegisterURLs() {
 	initialize_functions.Profiles()
 
 	category.GetAll() // Инициализируем
+
+	var countInfo = internal.CountStruct{}
+	db.Postgres.QueryRow(ctx, `select 
+    	(select count(*) from users),
+    	(select count(*) from topics),
+    	(select count(*) from messages);
+    	`).Scan(&countInfo.Users, &countInfo.Topics, &countInfo.Messages)
+
+	rdb.RedisDB.Set(ctx, "count:users", countInfo.Users, 0)
+	rdb.RedisDB.Set(ctx, "count:topics", countInfo.Topics, 0)
+	rdb.RedisDB.Set(ctx, "count:messages", countInfo.Messages, 0)
 
 	httpErr := http.ListenAndServe(":8080", nil)
 

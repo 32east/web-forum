@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/system/db"
+	"web-forum/system/rdb"
 	"web-forum/www/templates"
 )
 
@@ -18,6 +20,28 @@ type LastRegisteredUser struct {
 	Sex       string
 	Avatar    string
 	CreatedAt string
+}
+
+type ChanCount struct {
+	Key   string
+	Value int
+}
+
+var lenCount = len("count:")
+
+func redisGet(chanRdb chan ChanCount, key string) {
+	conv := 0
+	err := rdb.RedisDB.Get(ctx, key).Scan(&conv)
+	key = key[lenCount:]
+
+	if err != nil {
+		fmtQuery := fmt.Sprintf("select count(*) from %s;", key)
+		db.Postgres.QueryRow(ctx, fmtQuery).Scan(&conv)
+	}
+
+	chanRdb <- ChanCount{
+		key, conv,
+	}
 }
 
 func AdminMainPage(stdRequest *http.Request) {
@@ -32,22 +56,24 @@ func AdminMainPage(stdRequest *http.Request) {
 		return
 	}
 
-	rows, err := tx.Query(ctx, `select (select count(*) from topics),
-		(select count(*) from messages),
-		(select count(*) from users);`)
+	chanRdb := make(chan ChanCount)
+	defer close(chanRdb)
 
-	var topicsCount, messagesCount, usersCount int
+	var countsInfo = map[string]int{}
 
-	if err != nil {
-		system.ErrLog(errorFunction, err)
-	} else {
-		for rows.Next() {
-			err = rows.Scan(&topicsCount, &messagesCount, &usersCount)
+	for _, val := range []string{"topics", "messages", "users"} {
+		go redisGet(chanRdb, "count:"+val)
+	}
 
-			if err != nil {
-				system.ErrLog(errorFunction, err)
-				break
-			}
+	count := 3
+
+	for {
+		val := <-chanRdb
+		countsInfo[val.Key] = val.Value
+		count -= 1
+
+		if count <= 0 {
+			break
 		}
 	}
 
@@ -88,9 +114,9 @@ func AdminMainPage(stdRequest *http.Request) {
 	}
 
 	contentToAdd := map[string]interface{}{
-		"TopicsCount":         topicsCount,
-		"MessagesCount":       messagesCount,
-		"UsersCount":          usersCount,
+		"TopicsCount":         countsInfo["topics"],
+		"MessagesCount":       countsInfo["messages"],
+		"UsersCount":          countsInfo["users"],
 		"LastRegisteredUsers": users,
 	}
 

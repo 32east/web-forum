@@ -2,9 +2,9 @@ package admin
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"web-forum/system/db"
+	"web-forum/system/rdb"
 )
 
 func HandleMessageDelete(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) {
@@ -53,6 +53,14 @@ func HandleMessageDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 		return
 	}
 
-	fmt.Println(execErr)
+	_, execErr = tx.Exec(ctx, "update topics set message_count = message_count - 1 where id = $1;", val)
+
+	if execErr != nil {
+		answer["success"], answer["reason"] = false, execErr.Error()
+		return
+	}
+
+	rdb.RedisDB.Do(ctx, "incrby", "count:messages", -1)
+
 	answer["success"] = true
 }

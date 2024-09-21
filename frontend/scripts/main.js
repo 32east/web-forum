@@ -17,11 +17,12 @@ window.onload = function() {
         return localStorage.getItem('refresh_token');
     }
 
-
+    setTimeout( function() {
     checkTokenValidity(function() { location.reload(); }, true)
+    }, 250);
 
     function checkTokenValidity(callback, disableCallbackOnFail=false) {
-        const accessToken = getCookie('access_token');
+        var accessToken = getCookie('access_token');
         try {
             const decodedToken = atob(accessToken.split('.')[1]);
             const tokenData = JSON.parse(decodedToken);
@@ -103,6 +104,8 @@ window.onload = function() {
 
     // Функция для обработки ошибок и обновления токенов
     function handleErrorAndRefreshToken(error, callback) {
+        if (getRefreshToken() === null) { return }
+
         if (error.reason === "token is expired"  || error.reason === "token expired" || error.reason === "not authorized") {
             fetch('/api/refresh-token', {
                 method: 'POST',
@@ -398,6 +401,7 @@ window.onload = function() {
                 method: 'POST',
             })
                 .then(() => {
+                    localStorage.removeItem('refresh_token');
                     location.reload();
                 })
                 .catch(() => {

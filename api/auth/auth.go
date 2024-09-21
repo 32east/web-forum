@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
-	"time"
 	"web-forum/internal"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
@@ -144,6 +143,8 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 		return
 	}
 
+	rdb.RedisDB.Do(ctx, "incrby", "count:users", 1)
+
 	answer["success"] = true
 }
 
@@ -194,13 +195,6 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 		return
 	}
 
-	errRTokenSet := rdb.RedisDB.Set(ctx, "RToken:"+refreshToken, loginStr, time.Hour*72)
-
-	if errRTokenSet.Err() != nil {
-		answer["success"], answer["reason"] = false, errRTokenSet.Err().Error()
-		return
-	}
-
 	answer["success"], answer["access_token"], answer["refresh_token"] = true, accessToken, refreshToken
 	answer["access_token_exp"], answer["refresh_token_exp"] = 3600*12, refreshTokenTime
 
@@ -209,6 +203,9 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 		Value:    accessToken,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
+		// HttpOnly: true,
+		// В фронтенде у меня обновление токена идёт через JS, но поскольку я JS плохо знаю я хз как без JS обновление сделать.
+		// Так что... да. Здесь у меня просто выбора нет.
 	})
 }
 
@@ -288,6 +285,7 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 		Path:     "/",
 		MaxAge:   -1,
 		SameSite: http.SameSiteLaxMode,
+		// HttpOnly: true,
 	})
 }
 
@@ -298,6 +296,7 @@ func HandleLogout(writer http.ResponseWriter, _ *http.Request, answer map[string
 		Path:     "/",
 		MaxAge:   -1,
 		SameSite: http.SameSiteLaxMode,
+		// HttpOnly: true,
 	})
 
 	answer["success"] = true

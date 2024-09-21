@@ -78,3 +78,9 @@ type PaginatorConstructed struct {
 	Left       PaginatorArrows
 	Right      PaginatorArrows
 }
+
+type CountStruct struct {
+	Users    int
+	Topics   int
+	Messages int
+}
