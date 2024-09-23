@@ -67,15 +67,17 @@ func RegisterURLs() {
 
 	middleware.Page("/admin", "Админ панель", handlers.AdminMainPage)
 	middleware.Page("/admin/categories", "Категории - Админ панель", handlers.AdminCategoriesPage)
+	middleware.Page("/admin/users", "Юзеры - Админ панель", handlers.AdminUsersPage)
 
-	middleware.API("/api/login", auth.HandleLogin)
-	middleware.API("/api/register", auth.HandleRegister)
-	middleware.API("/api/logout", auth.HandleLogout)
-	middleware.API("/api/refresh-token", auth.HandleRefreshToken)
+	middleware.API("/api/v1/auth/login", auth.HandleLogin)
+	middleware.API("/api/v1/auth/register", auth.HandleRegister)
+	middleware.API("/api/v1/auth/logout", auth.HandleLogout)
+	middleware.API("/api/v1/auth/refresh-token", auth.HandleRefreshToken)
 
-	middleware.API("/api/send-message", topics.HandleMessage)
-	middleware.API("/api/profile/settings", profile.HandleSettings)
-	middleware.API("/api/topics/create", topics.HandleTopicCreate)
+	middleware.API("/api/v1/topics/send-message", topics.HandleMessage)
+	middleware.API("/api/v1/topics/create", topics.HandleTopicCreate)
+
+	middleware.API("/api/v1/profile/settings", profile.HandleSettings)
 
 	middleware.AdminAPI("/api/v1/admin/message/delete", "POST", admin.HandleMessageDelete)
 	middleware.AdminAPI("/api/v1/admin/category/create", "POST", admin.HandleCategoryCreate)

@@ -48,3 +48,4 @@ var Profile = Prepare("frontend/forum/profile.html", "frontend/common/not-author
 
 var AdminMain = Prepare("frontend/admin/index.html", "frontend/admin/main.html")
 var AdminCategories = Prepare("frontend/admin/index.html", "frontend/admin/categories.html")
+var AdminUsers = Prepare("frontend/admin/index.html", "frontend/admin/users.html")

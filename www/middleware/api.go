@@ -8,7 +8,7 @@ import (
 	"web-forum/system"
 )
 
-func API(uri string, newFunc func(http.ResponseWriter, *http.Request, map[string]interface{})) {
+func API(uri string, newFunc func(http.ResponseWriter, *http.Request, map[string]interface{}) error) {
 	http.HandleFunc(uri, func(writer http.ResponseWriter, reader *http.Request) {
 		log.Println("Request:", reader.Method, reader.URL.Path)
 
@@ -26,10 +26,10 @@ func API(uri string, newFunc func(http.ResponseWriter, *http.Request, map[string
 			return
 		}
 
-		newFunc(writer, reader, answer)
+		err := newFunc(writer, reader, answer)
 
-		if answer["success"] != nil && !answer["success"].(bool) {
-			system.ErrLog(errFunction, fmt.Errorf("%s", answer["reason"].(string)))
+		if err != nil {
+			system.ErrLog(errFunction, err)
 		}
 	})
 }

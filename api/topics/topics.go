@@ -14,70 +14,63 @@ import (
 
 var ctx = context.Background()
 
-func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
+func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
 	cookie, err := reader.Cookie("access_token")
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
-
-		return
+		return nil
 	}
 
 	accInfo, tokenErr := account.ReadFromCookie(cookie)
 
 	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
-
-		return
+		return nil
 	}
 
-	jsonData := map[string]interface{}{
-		"message":  "",
-		"topic_id": -1,
-	}
-
+	jsonData := internal.MessageCreate{}
 	jsonErr := json.NewDecoder(reader.Body).Decode(&jsonData)
 
 	if jsonErr != nil {
-		answer["success"], answer["reason"] = false, jsonErr.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return jsonErr
 	}
 
-	topicId, message := jsonData["topic_id"], jsonData["message"]
+	topicId, message := jsonData.TopicId, jsonData.Message
 	scanTopicId := -1
 
 	tx, err := db.Postgres.Begin(ctx)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, err.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return err
 	}
 
 	errScan := tx.QueryRow(ctx, "select id from topics where id = $1;", topicId).Scan(&scanTopicId)
 
 	if errScan != nil {
-		answer["success"], answer["reason"] = false, errScan.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return errScan
 	}
 
-	msgInsert := internal.FormatString(message.(string))
+	msgInsert := internal.FormatString(message)
 	accountId := accInfo.Id
 
 	defer func() {
-		if !answer["success"].(bool) {
-			tx.Rollback(ctx)
-		} else {
+		switch answer["success"] {
+		case true:
 			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
 		}
 	}()
 
 	_, queryErr := tx.Exec(ctx, `insert into messages(topic_id, account_id, message, create_time, update_time) values ($1, $2, $3, current_timestamp, NULL)`, topicId, accountId, msgInsert)
 
 	if queryErr != nil {
-		answer["success"], answer["reason"] = false, queryErr.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return queryErr
 	}
 
 	messageCount := 0
@@ -87,9 +80,8 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	returning message_count;`, topicId).Scan(&messageCount)
 
 	if queryErr != nil {
-		answer["success"], answer["reason"] = false, queryErr.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return queryErr
 	}
 
 	pagesCount := math.Ceil(float64((messageCount)/internal.MaxPaginatorMessages)) + 1
@@ -99,58 +91,62 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	}
 
 	answer["success"] = true
+
+	return nil
 }
 
-func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
+func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
 	cookie, err := reader.Cookie("access_token")
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
-
-		return
+		return nil
 	}
 
 	accInfo, tokenErr := account.ReadFromCookie(cookie)
 
 	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
-
-		return
+		return nil
 	}
 
-	topic := map[string]string{}
+	topic := internal.TopicCreate{}
 	jsonErr := json.NewDecoder(reader.Body).Decode(&topic)
 
 	if jsonErr != nil {
-		answer["success"], answer["reason"] = false, jsonErr.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return jsonErr
 	}
 
-	name, msg, categoryId, accountId := topic["name"], topic["message"], topic["category_id"], accInfo.Id
+	name, msg, categoryId, accountId := topic.Name, topic.Message, topic.CategoryId, accInfo.Id
 
 	if internal.Utf8Length(name) > 128 {
 		answer["success"], answer["reason"] = false, "name too long"
-
-		return
+		return nil
 	}
 
 	scanCategoryId := -1
 
-	tx, err := db.Postgres.Begin(ctx)
+	tx, beginErr := db.Postgres.Begin(ctx)
 	defer func() {
-		if !answer["success"].(bool) {
-			tx.Rollback(ctx)
-		} else {
+		switch answer["success"] {
+		case true:
 			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
 		}
 	}()
+
+	if beginErr != nil {
+		answer["success"], answer["reason"] = false, "internal server error"
+		return beginErr
+	}
 
 	row := tx.QueryRow(ctx, "select id from forums where id = $1;", categoryId).Scan(&scanCategoryId)
 
 	if row != nil {
 		answer["success"], answer["reason"] = false, "category not founded"
-		return
+		return nil
 	}
 
 	queryErr := tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time, parent_id) values ($1, $2, $3, now(), -1) returning id;", categoryId, name, accountId)
@@ -159,9 +155,8 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	errScan := queryErr.Scan(&lastInsertId)
 
 	if errScan != nil {
-		answer["success"], answer["reason"] = false, errScan.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return errScan
 	}
 
 	msg = internal.FormatString(msg)
@@ -171,8 +166,8 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	msgIdQuery.Scan(&msgId)
 
 	if _, execErr := tx.Exec(ctx, "update topics set parent_id = $1 where id = $2;", msgId, lastInsertId); execErr != nil {
-		answer["success"], answer["reason"] = false, execErr.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return execErr
 	}
 
 	go func() {
@@ -181,4 +176,6 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	}()
 
 	answer["success"], answer["redirect"] = true, fmt.Sprintf("/topics/%d", lastInsertId)
+
+	return nil
 }

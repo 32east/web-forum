@@ -107,7 +107,7 @@ window.onload = function() {
         if (getRefreshToken() === null) { return }
 
         if (error.reason === "token is expired"  || error.reason === "token expired" || error.reason === "not authorized") {
-            fetch('/api/refresh-token', {
+            fetch('/api/v1/auth/refresh-token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -227,7 +227,7 @@ window.onload = function() {
                             location.reload();
                         } else {
                             handleErrorAndRefreshToken(data, () => {
-                                fetch('/api/profile/settings', {
+                                fetch('/api/v1/profile/settings', {
                                     method: 'POST',
                                     body: formData,
                                 })
@@ -263,7 +263,7 @@ window.onload = function() {
                 message: topicMessage
             };
 
-            fetch('/api/topics/create', {
+            fetch('/api/v1/topics/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -276,7 +276,7 @@ window.onload = function() {
                         window.location.href = data.redirect;
                     } else {
                         handleErrorAndRefreshToken(data, () => {
-                            fetch('/api/topics/create', {
+                            fetch('/api/v1/topics/create', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -397,7 +397,7 @@ window.onload = function() {
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
             e.preventDefault();
-            fetch('/api/logout', {
+            fetch('/api/v1/auth/logout', {
                 method: 'POST',
             })
                 .then(() => {
@@ -424,7 +424,7 @@ window.onload = function() {
             formData.append('username', username);
             formData.append('email', email);
 
-            fetch('/api/register', {
+            fetch('/api/v1/auth/register', {
                 method: 'POST',
                 body: formData,
             })
@@ -452,7 +452,7 @@ window.onload = function() {
             formData.append('login', login);
             formData.append('password', password);
 
-            fetch('/api/login', {
+            fetch('/api/v1/auth/login', {
                 method: 'POST',
                 body: formData,
             })
@@ -483,7 +483,7 @@ window.onload = function() {
                 topicId = shitsplit[shitsplit.length - 2]
             }
 
-            fetch('/api/send-message', {
+            fetch('/api/v1/topics/send-message', {
                 method: 'POST',
                 body: JSON.stringify({
                     topic_id: Number(topicId),
@@ -502,7 +502,7 @@ window.onload = function() {
                         }
                     } else {
                         handleErrorAndRefreshToken(data, () => {
-                            fetch('/api/send-message', {
+                            fetch('/api/v1/topics/send-message', {
                                 method: 'POST',
                                 body: JSON.stringify({
                                     topic_id: Number(topicId),

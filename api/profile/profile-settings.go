@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"
@@ -23,19 +22,19 @@ import (
 
 var ctx = context.Background()
 
-func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
+func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
 	cookie, err := reader.Cookie("access_token")
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
-		return
+		return nil
 	}
 
 	accountData, errGetAccount := account.ReadFromCookie(cookie)
 
 	if errGetAccount != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
-		return
+		return nil
 	}
 
 	username := reader.FormValue("username")
@@ -44,13 +43,9 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 	multipartFile, multiPartHeader, errFile := reader.FormFile("avatar")
 	isAvatarRemove := reader.FormValue("avatarRemove") == "true"
 
-	defer func() {
-		if errFile != nil {
-			return
-		}
-
-		multipartFile.Close()
-	}()
+	if errFile != nil {
+		defer multipartFile.Close()
+	}
 
 	var valuesToChange = make(map[string]interface{})
 
@@ -60,10 +55,10 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		switch {
 		case usernameLen < internal.UsernameMinLength:
 			answer["success"], answer["reason"] = false, "username too short"
-			return
+			return nil
 		case usernameLen > internal.UsernameMaxLength:
 			answer["success"], answer["reason"] = false, "username too long"
-			return
+			return nil
 		}
 
 		username = internal.FormatString(username)
@@ -80,7 +75,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 		if containIllegalCharacters >= 0 {
 			answer["success"], answer["reason"] = false, "username contains illegal characters"
-			return
+			return nil
 		}
 
 		valuesToChange["username"] = username
@@ -93,7 +88,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		if strings.Count(description, "\n") > 3 || internal.Utf8Length(description) > 512 {
 			answer["success"], answer["reason"] = false, "description too long"
 
-			return
+			return nil
 		}
 
 		valuesToChange["description"] = description
@@ -113,20 +108,20 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 		if !strings.Contains(contentTypeOfThisFile, "image/") {
 			answer["success"], answer["reason"] = false, "file type not allowed"
-			return
+			return nil
 		}
 
 		// Начинаем читать с 0 позиции.
 		if _, seekErr := multipartFile.Seek(0, 0); seekErr != nil {
 			answer["success"], answer["reason"] = false, "error seeking multipart file"
-			return
+			return seekErr
 		}
 
 		config, format, decodeErr := image.Decode(multipartFile)
 
 		if decodeErr != nil {
 			answer["success"], answer["reason"] = false, "error decoding image"
-			return
+			return decodeErr
 		}
 
 		x, y := config.Bounds().Dx(), config.Bounds().Dy()
@@ -146,8 +141,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 		if err != nil {
 			answer["success"], answer["reason"] = false, "error encoding buffer to image"
-
-			return
+			return err
 		}
 
 		buf := make([]byte, newWriter.Len())
@@ -155,8 +149,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 		if readFileErr != nil {
 			answer["success"], answer["reason"] = false, "error reading multipart file"
-
-			return
+			return readFileErr
 		}
 
 		newSha256Buffer := sha256.New()
@@ -171,19 +164,20 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		}
 
 		file, fileErr := os.Create(internal.AvatarsFilePath + fileName)
-		defer file.Close()
+		if file != nil {
+			defer file.Close()
+		}
 
 		if fileErr != nil {
 			answer["success"], answer["reason"] = false, "image is not uploaded, because file is not created"
-
-			return
+			return fileErr
 		}
 
 		_, uploadFileError := file.Write(buf)
 
 		if uploadFileError != nil {
-			answer["success"], answer["reason"] = false, uploadFileError.Error()
-			return
+			answer["success"], answer["reason"] = false, "internal server error"
+			return uploadFileError
 		}
 
 		valuesToChange["avatar"] = fileName
@@ -193,16 +187,18 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 	tx, err := db.Postgres.Begin(ctx)
 
-	defer func(tx pgx.Tx) {
-		if answer["success"] == false {
+	defer func() {
+		switch answer["success"] {
+		case true:
+			tx.Commit(ctx)
+		case false:
 			tx.Rollback(ctx)
 		}
-	}(tx)
+	}()
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, err.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return err
 	}
 
 	// Может потом переписать??
@@ -211,20 +207,14 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		_, queryErr := tx.Exec(ctx, formatQuery, value, accountData.Id)
 
 		if queryErr != nil {
-			answer["success"], answer["reason"] = false, queryErr.Error()
-			break
+			answer["success"], answer["reason"] = false, "internal server error"
+			return queryErr
 		}
-	}
-
-	transactionCommit := tx.Commit(ctx)
-
-	if transactionCommit != nil {
-		answer["success"], answer["reason"] = false, transactionCommit.Error()
-		return
 	}
 
 	answer["success"] = true
 
 	rdb.RedisDB.Del(ctx, fmt.Sprintf("aID:%d", accountData.Id))
 	delete(account.FastCache, accountData.Id)
+	return nil
 }

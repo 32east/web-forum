@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
+	"web-forum/www/services/paginator"
 	"web-forum/www/templates"
 )
 
@@ -147,4 +149,59 @@ func AdminCategoriesPage(stdRequest *http.Request) {
 	}
 
 	templates.ContentAdd(stdRequest, templates.AdminCategories, categories)
+}
+
+type AdmAccount struct {
+	Id          int
+	Username    string
+	Email       string
+	IsAdmin     bool
+	Sex         string
+	Avatar      string
+	Description string
+	SignText    string
+	CreatedAt   string
+	UpdatedAt   string
+}
+
+func AdminUsersPage(r *http.Request) {
+	const errorFunction = "AdminUsersPage"
+
+	page := 1
+	pageStr := r.FormValue("page")
+
+	if pageStr != "" {
+		pageNum, err := strconv.Atoi(pageStr)
+
+		if err != nil {
+			system.ErrLog(errorFunction, err)
+		}
+
+		page = pageNum
+	}
+
+	tx, rows, _, err := paginator.Query("users",
+		"id, username, email, is_admin, sex, avatar, description, sign_text, created_at, updated_at",
+		"id",
+		-1, page, "select count(*) from users;")
+	defer tx.Commit(ctx)
+
+	if err != nil {
+		system.ErrLog(errorFunction, err)
+	}
+
+	var sendInfo []AdmAccount
+
+	for rows.Next() {
+		account := AdmAccount{}
+		scanErr := rows.Scan(&account.Id, &account.Username, &account.Email, &account.IsAdmin, &account.Sex, &account.Avatar, &account.Description, &account.SignText, &account.CreatedAt, &account.UpdatedAt)
+
+		if scanErr != nil {
+			system.ErrLog(errorFunction, scanErr)
+		}
+
+		sendInfo = append(sendInfo, account)
+	}
+
+	templates.ContentAdd(r, templates.AdminUsers, sendInfo)
 }

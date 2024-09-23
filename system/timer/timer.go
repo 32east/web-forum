@@ -22,7 +22,7 @@ func clearAccountsCache() {
 }
 
 func clearRefreshTokens() {
-	_, err := db.Postgres.Exec(ctx, "delete from tokens where expires_at < now();")
+	_, err := db.Postgres.Exec(ctx, "delete from tokens where expiresat < now();")
 
 	if err != nil {
 		system.ErrLog("timer.clearRefreshTokens", err)

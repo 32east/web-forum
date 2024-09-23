@@ -41,7 +41,7 @@ func IsLoginAndPasswordLegalForActions(loginStr string, passwordStr string) (boo
 	return success, reason
 }
 
-func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
+func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
 	loginStr := reader.FormValue("login")
 	passwordStr := reader.FormValue("password")
 	username := reader.FormValue("username")
@@ -51,45 +51,55 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 
 	if !success {
 		answer["success"], answer["reason"] = false, reason
-		return
+		return nil
 	}
 
-	rows, err := db.Postgres.Query(ctx, `select
+	tx, err := db.Postgres.Begin(ctx)
+	defer func() {
+		switch answer["success"] {
+		case true:
+			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
+		}
+	}()
+
+	if err != nil {
+		answer["success"], answer["reason"] = false, "internal server error"
+		return err
+	}
+
+	rows, err := tx.Query(ctx, `select
 		case when login=$1 then 1 else 0 end,
        	case when email=$2 then 1 else 0 end,
        	case when username=$3 then 1 else 0 end
 		from users as u1;`, loginStr, email, username)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, err.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return err
 	}
 
 	loginFounded, emailFounded, usernameFounded := 0, 0, 0
-	errReason := ""
 
 	for rows.Next() {
 		errRow := rows.Scan(&loginFounded, &emailFounded, &usernameFounded)
 
 		if errRow != nil {
-			errReason = errRow.Error()
-			break
+			return errRow
 		}
 	}
 
 	switch {
-	case errReason != "":
-		answer["success"], answer["reason"] = false, "internal server error"
-		return
 	case loginFounded == 1:
 		answer["success"], answer["reason"] = false, "this login is already registered"
-		return
+		return nil
 	case emailFounded == 1:
 		answer["success"], answer["reason"] = false, "this email is already registered"
-		return
+		return nil
 	case usernameFounded == 1:
 		answer["success"], answer["reason"] = false, "this username is already registered"
-		return
+		return nil
 	}
 
 	loginLen := internal.Utf8Length(loginStr)
@@ -100,56 +110,57 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 	switch {
 	case loginLen < internal.LoginMinLength:
 		answer["success"], answer["reason"] = false, "login too short"
-		return
+		return nil
 	case passwordLen < internal.PasswordMinLength:
 		answer["success"], answer["reason"] = false, "password too short"
-		return
+		return nil
 	case usernameLen < internal.UsernameMinLength:
 		answer["success"], answer["reason"] = false, "username too short"
-		return
+		return nil
 	case loginLen > internal.LoginMaxLength:
 		answer["success"], answer["reason"] = false, "login too long"
-		return
+		return nil
 	case passwordLen > internal.PasswordMaxLength:
 		answer["success"], answer["reason"] = false, "password too long"
-		return
+		return nil
 	case usernameLen > internal.UsernameMaxLength:
 		answer["success"], answer["reason"] = false, "username too long"
-		return
+		return nil
 	case emailLen < internal.EmailMinLength:
 		answer["success"], answer["reason"] = false, "email too short"
-		return
+		return nil
 	case emailLen > internal.EmailMaxLength:
 		answer["success"], answer["reason"] = false, "username too long"
-		return
+		return nil
 	default:
 	}
 
 	if _, err := mail.ParseAddress(email); err != nil {
 		answer["success"], answer["reason"] = false, "invalid email"
-		return
+		return nil
 	}
 
 	newSha256Writer := sha256.New()
 	newSha256Writer.Write([]byte(passwordStr))
 	hexPassword := hex.EncodeToString(newSha256Writer.Sum(nil))
 
-	if _, execErr := db.Postgres.Exec(ctx, "insert into users(login, password, username, email, created_at) values ($1, $2, $3, $4, CURRENT_TIMESTAMP);",
+	if _, execErr := tx.Exec(ctx, "insert into users(login, password, username, email, created_at) values ($1, $2, $3, $4, CURRENT_TIMESTAMP);",
 		loginStr,
 		hexPassword,
 		username,
 		email); execErr != nil {
-		answer["success"], answer["reason"] = false, execErr.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return execErr
 	}
 
 	rdb.RedisDB.Do(ctx, "incrby", "count:users", 1)
 
 	answer["success"] = true
+	return nil
 }
 
 // TODO: Могут насрать запросами, что по итогу выльется в DDOS.
-func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) {
+func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
 	loginStr := reader.FormValue("login")
 	passwordStr := reader.FormValue("password")
 
@@ -157,16 +168,14 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 
 	if !success {
 		answer["success"], answer["reason"] = false, reason
-
-		return
+		return nil
 	}
 
 	accountInfo, queryErr := account.GetByLogin(loginStr)
 
 	if queryErr != nil {
-		answer["success"], answer["reason"] = false, queryErr.Error()+" in query"
-
-		return
+		answer["success"], answer["reason"] = false, "account not founded"
+		return nil
 	}
 
 	toSha256 := sha256.New()
@@ -174,25 +183,22 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 	hexPassword := hex.EncodeToString(toSha256.Sum(nil))
 
 	if accountInfo.Password != hexPassword {
-		answer["success"], answer["reason"] = false, "wrong password"
-
-		return
+		answer["success"], answer["reason"] = false, "account not founded"
+		return nil
 	}
 
 	accessToken, errAccess := jwt_token.GenerateNew(accountInfo.Id, "access")
 
 	if errAccess != nil {
-		answer["success"], answer["reason"] = false, errAccess.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return errAccess
 	}
 
 	refreshToken, errRefresh := jwt_token.GenerateNew(accountInfo.Id, "refresh")
 
 	if errRefresh != nil {
-		answer["success"], answer["reason"] = false, errRefresh
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return errRefresh
 	}
 
 	answer["success"], answer["access_token"], answer["refresh_token"] = true, accessToken, refreshToken
@@ -207,74 +213,76 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 		// В фронтенде у меня обновление токена идёт через JS, но поскольку я JS плохо знаю я хз как без JS обновление сделать.
 		// Так что... да. Здесь у меня просто выбора нет.
 	})
+
+	return nil
 }
 
-func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) {
+func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
 	mapToken := map[string]string{}
 	jsonErr := json.NewDecoder(r.Body).Decode(&mapToken)
 
 	if jsonErr != nil {
-		answer["success"], answer["reason"] = false, jsonErr.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return jsonErr
 	}
 
 	refreshToken := mapToken["refresh_token"]
 
 	if refreshToken == "" {
-		answer["success"], answer["reason"] = false, "refresh token is empty"
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return nil
 	}
 
 	tokenClaim, err := jwt_token.GetInfo(refreshToken)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, err.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return err
 	}
 
 	accountId := tokenClaim["id"]
 	accessToken, errAccess := jwt_token.GenerateNew(accountId.(int64), "access")
 
 	if errAccess != nil {
-		answer["success"], answer["reason"] = false, errAccess.Error()
-
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return errAccess
 	}
 
 	newRefreshToken, errRefresh := jwt_token.GenerateNew(accountId.(int64), "refresh")
 
 	if errRefresh != nil {
-		answer["success"], answer["reason"] = false, errRefresh.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return errRefresh
 	}
 
 	tx, err := db.Postgres.Begin(ctx)
 	defer func() {
-		if answer["success"].(bool) {
+		switch answer["success"] {
+		case true:
 			tx.Commit(ctx)
-		} else {
+		case false:
 			tx.Rollback(ctx)
 		}
 	}()
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, err.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return err
 	}
 
 	_, execErr := tx.Exec(ctx, "delete from tokens where refresh_token = $1;", refreshToken)
 
 	if execErr != nil {
-		answer["success"], answer["reason"] = false, execErr.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return execErr
 	}
 
 	fmtQuery := fmt.Sprintf("insert into tokens (account_id, refresh_token, expiresat) values ($1, $2, now() + interval '%d second');", refreshTokenTime)
 	_, execErr = tx.Exec(ctx, fmtQuery, accountId, newRefreshToken)
 
 	if execErr != nil {
-		answer["success"], answer["reason"] = false, execErr.Error()
-		return
+		answer["success"], answer["reason"] = false, "internal server error"
+		return execErr
 	}
 
 	answer["success"], answer["access_token"], answer["refresh_token"] = true, accessToken, newRefreshToken
@@ -287,9 +295,11 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 		SameSite: http.SameSiteLaxMode,
 		// HttpOnly: true,
 	})
+
+	return nil
 }
 
-func HandleLogout(writer http.ResponseWriter, _ *http.Request, answer map[string]interface{}) {
+func HandleLogout(writer http.ResponseWriter, _ *http.Request, answer map[string]interface{}) error {
 	http.SetCookie(writer, &http.Cookie{
 		Name:     "access_token",
 		Value:    "",
@@ -300,4 +310,5 @@ func HandleLogout(writer http.ResponseWriter, _ *http.Request, answer map[string
 	})
 
 	answer["success"] = true
+	return nil
 }

@@ -45,6 +45,25 @@ type Topic struct {
 	ParentId     int
 }
 
+type MessageCreate struct {
+	TopicId int    `json:"topic_id"`
+	Message string `json:"message"`
+}
+
+type TopicCreate struct {
+	Name       string `json:"name"`
+	Message    string `json:"message"`
+	CategoryId int    `json:"category_id"`
+}
+
+type MessageDelete struct {
+	Id int `json:"id"`
+}
+
+type CategoryDelete struct {
+	Id int `json:"id"`
+}
+
 type Message struct {
 	Id         int
 	TopicId    int

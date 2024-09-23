@@ -9,7 +9,7 @@ import (
 	"web-forum/www/services/account"
 )
 
-func AdminAPI(uri string, method string, newFunc func(http.ResponseWriter, *http.Request, map[string]interface{})) {
+func AdminAPI(uri string, method string, newFunc func(http.ResponseWriter, *http.Request, map[string]interface{}) error) {
 	http.HandleFunc(uri, func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request:", r.Method, r.URL.Path)
 
@@ -45,10 +45,10 @@ func AdminAPI(uri string, method string, newFunc func(http.ResponseWriter, *http
 			return
 		}
 
-		newFunc(w, r, answer)
+		errFunc := newFunc(w, r, answer)
 
-		if answer["success"] != nil && !answer["success"].(bool) {
-			system.ErrLog(errFunction, fmt.Errorf("%s", answer["reason"]))
+		if errFunc != nil {
+			system.ErrLog(errFunction, errFunc)
 		}
 	})
 }

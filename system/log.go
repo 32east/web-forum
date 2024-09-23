@@ -6,7 +6,7 @@ import (
 )
 
 func ErrLog(funcName string, err error) error {
-	fmtPrint := fmt.Sprintf("%s: %w", funcName, err)
+	fmtPrint := fmt.Sprintf("%s: %s", funcName, err)
 	log.Println(fmtPrint)
 	return fmt.Errorf(fmtPrint)
 }
