@@ -180,10 +180,32 @@ func AdminUsersPage(r *http.Request) {
 		page = pageNum
 	}
 
-	tx, rows, _, err := paginator.Query("users",
-		"id, username, email, is_admin, sex, avatar, description, sign_text, created_at, updated_at",
-		"id",
-		-1, page, "select count(*) from users;")
+	usersCount, usersCountErr := rdb.RedisDB.Get(ctx, "count:users").Result()
+
+	if usersCountErr != nil {
+		system.ErrLog(errorFunction, usersCountErr)
+
+		usersCount = "0"
+	}
+
+	conv, err := strconv.Atoi(usersCount)
+
+	if err != nil {
+		system.ErrLog(errorFunction, err)
+		conv = 1
+	}
+
+	preQuery := internal.PaginatorPreQuery{
+		TableName:     "users",
+		OutputColumns: "id, username, email, is_admin, sex, avatar, description, sign_text, created_at, updated_at",
+		Page:          page,
+		QueryCount: internal.PaginatorQueryCount{
+			PreparedValue: conv,
+		},
+	}
+
+	tx, rows, _, err := paginator.Query(preQuery)
+	fmt.Println(err)
 	defer tx.Commit(ctx)
 
 	if err != nil {
@@ -193,11 +215,37 @@ func AdminUsersPage(r *http.Request) {
 	var sendInfo []AdmAccount
 
 	for rows.Next() {
+		var sex, avatar, description, signText sql.NullString
+		var createdAt time.Time
+		var updatedAt sql.NullTime
+
 		account := AdmAccount{}
-		scanErr := rows.Scan(&account.Id, &account.Username, &account.Email, &account.IsAdmin, &account.Sex, &account.Avatar, &account.Description, &account.SignText, &account.CreatedAt, &account.UpdatedAt)
+		scanErr := rows.Scan(&account.Id, &account.Username, &account.Email, &account.IsAdmin, &sex, &avatar, &description, &signText, &createdAt, &updatedAt)
 
 		if scanErr != nil {
 			system.ErrLog(errorFunction, scanErr)
+		}
+
+		if sex.Valid {
+			account.Sex = sex.String
+		}
+
+		if avatar.Valid {
+			account.Avatar = avatar.String
+		}
+
+		if description.Valid {
+			account.Description = description.String
+		}
+
+		if signText.Valid {
+			account.SignText = signText.String
+		}
+
+		account.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
+
+		if updatedAt.Valid {
+			account.UpdatedAt = updatedAt.Time.Format("2006-01-02 15:04:05")
 		}
 
 		sendInfo = append(sendInfo, account)

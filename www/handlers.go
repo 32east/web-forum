@@ -101,7 +101,7 @@ func RegisterURLs() {
 	rdb.RedisDB.Set(ctx, "count:topics", countInfo.Topics, 0)
 	rdb.RedisDB.Set(ctx, "count:messages", countInfo.Messages, 0)
 
-	httpErr := http.ListenAndServe(":8080", nil)
+	httpErr := http.ListenAndServe(":8081", nil)
 
 	system.FatalLog(errorFunction, httpErr)
 }

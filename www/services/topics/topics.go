@@ -3,8 +3,10 @@ package topics
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"web-forum/internal"
 	"web-forum/system"
+	"web-forum/system/rdb"
 	"web-forum/www/services/account"
 	"web-forum/www/services/paginator"
 )
@@ -14,18 +16,43 @@ var ctx = context.Background()
 func Get(forumId int, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics.Get"
 
-	var queryCount string
+	var preparedValue int
+	var sqlCount string
 
 	if forumId == -1 {
-		queryCount = "select count(*) from topics;"
+		usersCount, usersCountErr := rdb.RedisDB.Get(ctx, "count:topics").Result()
+
+		if usersCountErr != nil {
+			system.ErrLog(errorFunction, usersCountErr)
+
+			usersCount = "0"
+		}
+
+		conv, err := strconv.Atoi(usersCount)
+
+		if err != nil {
+			system.ErrLog(errorFunction, err)
+			conv = 1
+		}
+
+		preparedValue = conv
 	} else {
-		queryCount = fmt.Sprintf("select topics_count from forums where id = %d;", forumId)
+		sqlCount = fmt.Sprintf("select topics_count from forums where id = %d;", forumId)
 	}
 
-	tx, rows, topics, err := paginator.Query("topics",
-		"id, forum_id, topic_name, created_by, create_time, update_time, message_count, parent_id",
-		"forum_id",
-		forumId, page, queryCount)
+	preQuery := internal.PaginatorPreQuery{
+		TableName:     "topics",
+		OutputColumns: "id, forum_id, topic_name, created_by, create_time, update_time, message_count, parent_id",
+		WhereColumn:   "forum_id",
+		WhereValue:    forumId,
+		Page:          page,
+		QueryCount: internal.PaginatorQueryCount{
+			PreparedValue: preparedValue,
+			Query:         sqlCount,
+		},
+	}
+
+	tx, rows, topics, err := paginator.Query(preQuery)
 
 	defer tx.Commit(ctx)
 

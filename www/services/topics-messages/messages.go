@@ -15,10 +15,18 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics_messages.Get"
 
 	queryCount := fmt.Sprintf("select message_count from topics where id = %d", topic.Id)
-	tx, rows, paginatorMessages, err := paginator.Query("messages",
-		"id, topic_id, account_id, message, create_time, update_time",
-		"topic_id", topic.Id, page, queryCount)
+	preQuery := internal.PaginatorPreQuery{
+		TableName:     "messages",
+		OutputColumns: "id, topic_id, account_id, message, create_time, update_time",
+		WhereColumn:   "topic_id",
+		WhereValue:    topic.Id,
+		Page:          page,
+		QueryCount: internal.PaginatorQueryCount{
+			Query: queryCount,
+		},
+	}
 
+	tx, rows, paginatorMessages, err := paginator.Query(preQuery)
 	defer tx.Commit(ctx)
 
 	if err != nil {

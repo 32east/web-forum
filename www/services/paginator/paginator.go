@@ -12,7 +12,9 @@ import (
 
 var ctx = context.Background()
 
-func Query(tableName string, outputColumns string, columnName string, id int, page int, queryCount string) (tx pgx.Tx, rows pgx.Rows, paginatorMessages internal.Paginator, err error) {
+func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, paginatorMessages internal.Paginator, err error) {
+	// tableName string, outputColumns string, columnName string, id int, page int, queryCount string
+
 	const errorFunction = "paginator.Query"
 
 	tx, err = db.Postgres.Begin(ctx)
@@ -22,13 +24,22 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 	}
 
 	var topicsCount float64
+	var tableName = preQuery.TableName
+	var outputColumns = preQuery.OutputColumns
+	var page = preQuery.Page
+	var columnName = preQuery.WhereColumn
+	var id = preQuery.WhereValue
 
-	queryRow := tx.QueryRow(ctx, queryCount)
-	countMessagesErr := queryRow.Scan(&topicsCount)
+	if preQuery.QueryCount.PreparedValue != 0 {
+		topicsCount = float64(preQuery.QueryCount.PreparedValue)
+	} else {
+		queryRow := tx.QueryRow(ctx, preQuery.QueryCount.Query)
+		countMessagesErr := queryRow.Scan(&topicsCount)
 
-	if countMessagesErr != nil {
-		system.ErrLog(errorFunction, countMessagesErr)
-		topicsCount = 1
+		if countMessagesErr != nil {
+			system.ErrLog(errorFunction, countMessagesErr)
+			topicsCount = 1
+		}
 	}
 
 	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
@@ -39,7 +50,7 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 
 	var whereStr string
 
-	if id != -1 {
+	if id != 0 {
 		whereStr = fmt.Sprintf("where %s = $1", columnName)
 	}
 
@@ -57,7 +68,7 @@ func Query(tableName string, outputColumns string, columnName string, id int, pa
 	)
 	order by id;`, outputColumns, tableName, tableName, whereStr, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages)
 
-	if id == -1 {
+	if id == 0 {
 		rows, err = tx.Query(ctx, fmtQuery)
 	} else {
 		rows, err = tx.Query(ctx, fmtQuery, id)

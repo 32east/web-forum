@@ -163,7 +163,7 @@ window.onload = function() {
             const formData = new FormData();
             Object.keys(newValues).forEach(key => formData.append(key, newValues[key]));
 
-            fetch('/api/profile/settings', {
+            fetch('/api/v1/profile/settings', {
                 method: 'POST',
                 body: formData,
             })
@@ -173,7 +173,7 @@ window.onload = function() {
                         location.reload();
                     } else {
                         handleErrorAndRefreshToken(data, () => {
-                            fetch('/api/profile/settings', {
+                            fetch('/api/v1/profile/settings', {
                                 method: 'POST',
                                 body: formData,
                             })
@@ -217,7 +217,7 @@ window.onload = function() {
                 const formData = new FormData();
                 Object.keys(changedValues).forEach(key => formData.append(key, changedValues[key]));
 
-                fetch('/api/profile/settings', {
+                fetch('/api/v1/profile/settings', {
                     method: 'POST',
                     body: formData,
                 })
@@ -258,7 +258,7 @@ window.onload = function() {
             const topicName = topicNameInput.value.trim();
             const topicMessage = topicMessageInput.value.trim();
             const data = {
-                category_id: categoryId,
+                category_id: Number(categoryId),
                 name: topicName,
                 message: topicMessage
             };

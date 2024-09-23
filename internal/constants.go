@@ -80,6 +80,22 @@ type ProfileMessage struct {
 	CreateTime string
 }
 
+type PaginatorQueryCount struct {
+	PreparedValue int
+	Query         string
+}
+
+type PaginatorPreQuery struct {
+	TableName       string
+	OutputColumns   string
+	WhereColumn     string
+	WhereValue      int
+	Page            int
+	ColumnsToOutput string
+
+	QueryCount PaginatorQueryCount
+}
+
 type Paginator struct {
 	Objects     []interface{} // Здесь наши обрезанные объекты
 	CurrentPage int           // Текущая страница
