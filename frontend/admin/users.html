@@ -1,7 +1,7 @@
 {{ define "content" }}
 <h1>Пользователи</h1>
 
-{{ range . }}
+{{ range $.Users }}
 {{ template "user-block" . }}
 {{ end }}
 {{ template "user-admin-settings" . }}

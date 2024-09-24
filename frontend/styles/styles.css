@@ -403,6 +403,10 @@ a {
     z-index: 1000;
 }
 
+.modal-content label {
+    padding: 5px 0 0 0;
+}
+
 #profile-modal {
     position: fixed;
     top: 0;

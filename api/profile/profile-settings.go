@@ -22,28 +22,15 @@ import (
 
 var ctx = context.Background()
 
-func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
-	cookie, err := reader.Cookie("access_token")
-
-	if err != nil {
-		answer["success"], answer["reason"] = false, "not authorized"
-		return nil
-	}
-
-	accountData, errGetAccount := account.ReadFromCookie(cookie)
-
-	if errGetAccount != nil {
-		answer["success"], answer["reason"] = false, "not authorized"
-		return nil
-	}
-
+func ProcessSettings(accountData *account.Account, reader *http.Request, answer *map[string]interface{}) (err error) {
 	username := reader.FormValue("username")
+	sex := reader.FormValue("sex")
 	description := reader.FormValue("description")
 	signText := reader.FormValue("signText")
 	multipartFile, multiPartHeader, errFile := reader.FormFile("avatar")
 	isAvatarRemove := reader.FormValue("avatarRemove") == "true"
 
-	if errFile != nil {
+	if errFile == nil {
 		defer multipartFile.Close()
 	}
 
@@ -54,10 +41,10 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 		switch {
 		case usernameLen < internal.UsernameMinLength:
-			answer["success"], answer["reason"] = false, "username too short"
+			(*answer)["success"], (*answer)["reason"] = false, "username too short"
 			return nil
 		case usernameLen > internal.UsernameMaxLength:
-			answer["success"], answer["reason"] = false, "username too long"
+			(*answer)["success"], (*answer)["reason"] = false, "username too long"
 			return nil
 		}
 
@@ -74,7 +61,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		})
 
 		if containIllegalCharacters >= 0 {
-			answer["success"], answer["reason"] = false, "username contains illegal characters"
+			(*answer)["success"], (*answer)["reason"] = false, "username contains illegal characters"
 			return nil
 		}
 
@@ -86,7 +73,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		description = strings.Replace(description, "\n\n", "\n", -1)
 
 		if strings.Count(description, "\n") > 3 || internal.Utf8Length(description) > 512 {
-			answer["success"], answer["reason"] = false, "description too long"
+			(*answer)["success"], (*answer)["reason"] = false, "description too long"
 
 			return nil
 		}
@@ -94,6 +81,12 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		valuesToChange["description"] = description
 	} else {
 		valuesToChange["description"] = nil
+	}
+
+	if sex != "" && (sex == "m" || sex == "f") {
+		valuesToChange["sex"] = sex
+	} else {
+		valuesToChange["sex"] = nil
 	}
 
 	if signText != "" {
@@ -107,20 +100,20 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		contentTypeOfThisFile := multiPartHeader.Header["Content-Type"][0]
 
 		if !strings.Contains(contentTypeOfThisFile, "image/") {
-			answer["success"], answer["reason"] = false, "file type not allowed"
+			(*answer)["success"], (*answer)["reason"] = false, "file type not allowed"
 			return nil
 		}
 
 		// Начинаем читать с 0 позиции.
 		if _, seekErr := multipartFile.Seek(0, 0); seekErr != nil {
-			answer["success"], answer["reason"] = false, "error seeking multipart file"
+			(*answer)["success"], (*answer)["reason"] = false, "error seeking multipart file"
 			return seekErr
 		}
 
 		config, format, decodeErr := image.Decode(multipartFile)
 
 		if decodeErr != nil {
-			answer["success"], answer["reason"] = false, "error decoding image"
+			(*answer)["success"], (*answer)["reason"] = false, "error decoding image"
 			return decodeErr
 		}
 
@@ -140,7 +133,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		}
 
 		if err != nil {
-			answer["success"], answer["reason"] = false, "error encoding buffer to image"
+			(*answer)["success"], (*answer)["reason"] = false, "error encoding buffer to image"
 			return err
 		}
 
@@ -148,7 +141,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		_, readFileErr := newWriter.Read(buf)
 
 		if readFileErr != nil {
-			answer["success"], answer["reason"] = false, "error reading multipart file"
+			(*answer)["success"], (*answer)["reason"] = false, "error reading multipart file"
 			return readFileErr
 		}
 
@@ -157,10 +150,10 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		encodeThisString := hex.EncodeToString(newSha256Buffer.Sum(nil))
 		sixStartStr := encodeThisString[:6]
 
-		fileName := fmt.Sprintf("%d-%s.%s", accountData.Id, sixStartStr, contentTypeOfThisFile[len("image/"):])
+		fileName := fmt.Sprintf("%d-%s.%s", (*accountData).Id, sixStartStr, contentTypeOfThisFile[len("image/"):])
 
 		if accountData.Avatar.Valid {
-			os.Remove(internal.AvatarsFilePath + accountData.Avatar.String)
+			os.Remove(internal.AvatarsFilePath + (*accountData).Avatar.String)
 		}
 
 		file, fileErr := os.Create(internal.AvatarsFilePath + fileName)
@@ -169,14 +162,14 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 		}
 
 		if fileErr != nil {
-			answer["success"], answer["reason"] = false, "image is not uploaded, because file is not created"
+			(*answer)["success"], (*answer)["reason"] = false, "image is not uploaded, because file is not created"
 			return fileErr
 		}
 
 		_, uploadFileError := file.Write(buf)
 
 		if uploadFileError != nil {
-			answer["success"], answer["reason"] = false, "internal server error"
+			(*answer)["success"], (*answer)["reason"] = false, "internal server error"
 			return uploadFileError
 		}
 
@@ -189,7 +182,7 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 
 	if tx != nil {
 		defer func() {
-			switch answer["success"] {
+			switch (*answer)["success"] {
 			case true:
 				tx.Commit(ctx)
 			case false:
@@ -199,24 +192,42 @@ func HandleSettings(writer http.ResponseWriter, reader *http.Request, answer map
 	}
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, "internal server error"
+		(*answer)["success"], (*answer)["reason"] = false, "internal server error"
 		return err
 	}
 
 	// Может потом переписать??
 	for key, value := range valuesToChange {
 		formatQuery := fmt.Sprintf("UPDATE users SET %s = $1 WHERE id = $2;", key)
-		_, queryErr := tx.Exec(ctx, formatQuery, value, accountData.Id)
+		_, queryErr := tx.Exec(ctx, formatQuery, value, (*accountData).Id)
 
 		if queryErr != nil {
-			answer["success"], answer["reason"] = false, "internal server error"
+			(*answer)["success"], (*answer)["reason"] = false, "internal server error"
 			return queryErr
 		}
 	}
 
-	answer["success"] = true
+	(*answer)["success"] = true
 
-	rdb.RedisDB.Del(ctx, fmt.Sprintf("aID:%d", accountData.Id))
-	delete(account.FastCache, accountData.Id)
+	rdb.RedisDB.Del(ctx, fmt.Sprintf("aID:%d", (*accountData).Id))
+	delete(account.FastCache, (*accountData).Id)
 	return nil
+}
+
+func HandleSettings(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
+	cookie, err := reader.Cookie("access_token")
+
+	if err != nil {
+		answer["success"], answer["reason"] = false, "not authorized"
+		return nil
+	}
+
+	accountData, errGetAccount := account.ReadFromCookie(cookie)
+
+	if errGetAccount != nil {
+		answer["success"], answer["reason"] = false, "not authorized"
+		return nil
+	}
+
+	return ProcessSettings(accountData, reader, &answer)
 }

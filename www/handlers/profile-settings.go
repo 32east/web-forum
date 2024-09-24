@@ -6,6 +6,12 @@ import (
 	"web-forum/www/templates"
 )
 
+type sexSelect struct {
+	Name       string
+	Value      string
+	IsSelected bool
+}
+
 func HandleProfileSettings(stdRequest *http.Request) {
 	reqCtx := stdRequest.Context()
 	account := reqCtx.Value("AccountData").(*account2.Account)
@@ -36,6 +42,29 @@ func HandleProfileSettings(stdRequest *http.Request) {
 	if account.Avatar.Valid {
 		contentToAdd["Avatar"] = account.Avatar.String
 	}
+
+	var sexStr = account.Sex.String
+	var SexSelect []sexSelect
+
+	SexSelect = append(SexSelect, sexSelect{
+		Name:       "Мужской",
+		Value:      "m",
+		IsSelected: sexStr == "m",
+	})
+
+	SexSelect = append(SexSelect, sexSelect{
+		Name:       "Женский",
+		Value:      "f",
+		IsSelected: sexStr == "f",
+	})
+
+	SexSelect = append(SexSelect, sexSelect{
+		Name:       "Не указан",
+		Value:      "",
+		IsSelected: sexStr == "",
+	})
+
+	contentToAdd["SexSelect"] = SexSelect
 
 	templates.ContentAdd(stdRequest, templates.ProfileSettings, contentToAdd)
 }

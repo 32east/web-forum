@@ -1,5 +1,6 @@
 window.onload = function() {
     const removeAvatarButton = document.getElementById('remove-avatar-button');
+    const removeAvatarButton2 = document.getElementById('remove-avatar-button-2');
     const form = document.querySelector('.forum-list');
     const menuButton = document.getElementById('menu-button');
     const menu = document.getElementById('menu');
@@ -197,18 +198,12 @@ window.onload = function() {
         const username = form.querySelector('input[placeholder="Юзернейм"]');
 
         if (username) {
-            const originalValues = {
-                username: username.value,
-                description: form.querySelector('textarea[placeholder="Текст описания"]').value,
-                avatar: null,
-                signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
-            };
-
             saveButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 const newValues = {
                     username: username.value,
                     description: form.querySelector('textarea[placeholder="Текст описания"]').value,
+                    sex: document.getElementById("sex").value,
                     avatar: form.querySelector('input[type="file"]').files[0],
                     signText: form.querySelector('textarea[placeholder="Текст подписи"]').value,
                 };
@@ -480,8 +475,6 @@ window.onload = function() {
             var urlParts = window.location.pathname.split('/');
             var topicId = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2]; // Получаем ID топика
 
-            console.log("ID топика:", topicId);
-
             fetch('/api/v1/topics/send-message', {
                 method: 'POST',
                 headers: {
@@ -577,9 +570,11 @@ window.onload = function() {
         });
     });
 
+    var lastLink ;
     document.querySelectorAll('.user-link').forEach(link => {
         link.addEventListener('click', (event) => {
             event.preventDefault();
+            lastLink = link;
             const modal = document.getElementById('profile-modal');
             const username = link.getAttribute('data-username');
             const email = link.getAttribute('data-email');
@@ -592,7 +587,7 @@ window.onload = function() {
             document.getElementById('username').value = username;
             document.getElementById('email').value = email;
             document.getElementById('sex').value = sex;
-            document.getElementById('avatar').value = avatar;
+            document.getElementById('avatar').src = avatar;
             document.getElementById('description').value = description;
             document.getElementById('sign-text').value = signText;
 
@@ -601,22 +596,98 @@ window.onload = function() {
     });
 
     // Close modal
-    document.querySelector('.close-button').addEventListener('click', () => {
-        document.getElementById('profile-modal').style.display = 'none';
-    });
+    if (document.querySelector('.close-button')) {
+        document.querySelector('.close-button').addEventListener('click', () => {
+            document.getElementById('profile-modal').style.display = 'none';
+        });
+    }
+
 
     // Handle form submission
-    document.getElementById('profile-form').addEventListener('submit', (event) => {
-        event.preventDefault();
-        const formData = new FormData(event.target);
+    if (document.getElementById('profile-form')) {
+        // Обработчик для кнопки удаления аватара
+        if (removeAvatarButton2) {
+            removeAvatarButton2.addEventListener('click', (e) => {
+                e.preventDefault();
+                const username = lastLink.getAttribute('data-username');
+                const description = lastLink.getAttribute('data-description');
+                const signText = lastLink.getAttribute('data-sign-text');
 
-        // Here you would typically send the formData to the server
-        // using fetch or another method to handle the update
+                const newValues = {
+                    avatarRemove: true,
+                    username: username,
+                    description: description,
+                    signText: signText,
+                };
+                const formData = new FormData();
+                Object.keys(newValues).forEach(key => formData.append(key, newValues[key]));
+                formData.append("id", lastLink.getAttribute('data-id'));
+                fetch('/api/v1/admin/users/edit', {
+                    method: 'POST',
+                    body: formData,
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            handleErrorAndRefreshToken(data, () => {
+                                fetch('/api/v1/admin/users/edit', {
+                                    method: 'POST',
+                                    body: formData,
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            location.reload();
+                                        }
+                                    })
+                                    .catch(error => console.error('Ошибка:', error));
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Ошибка:', error));
+            });
+        }
 
-        console.log('Form Data:', Object.fromEntries(formData)); // For debugging
-        alert('Профиль обновлен!'); // Notify the user
-        document.getElementById('profile-modal').style.display = 'none'; // Close the modal
-    });
+        document.getElementById('profile-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            // Here you would typically send the formData to the server
+            // using fetch or another method to handle the update
+
+            console.log('Form Data:', Object.fromEntries(formData)); // For debugging
+            formData.append("id", lastLink.getAttribute('data-id'));
+            fetch('/api/v1/admin/users/edit', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        handleErrorAndRefreshToken(data, () => {
+                            fetch('/api/v1/admin/users/edit', {
+                                method: 'POST',
+                                body: formData,
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        location.reload();
+                                    }
+                                })
+                                .catch(error => console.error('Ошибка:', error));
+                        });
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
+
+            document.getElementById('profile-modal').style.display = 'none'; // Close the modal
+        });
+    }
 
     // Get all elements with class "save-category-settings"
     const deleteButtons = document.querySelectorAll('.delete-category-settings');

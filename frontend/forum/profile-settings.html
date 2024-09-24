@@ -9,6 +9,15 @@
     </label>
         {{ end }}
 
+        <label for="sex">
+            Пол:
+            <select id="sex" name="sex">
+                {{ range $.SexSelect }}
+                <option value="{{ .Value }}" {{ if .IsSelected -}} selected {{- end }}>{{ .Name }}</option>
+                {{ end }}
+            </select>
+        </label>
+
     <label class="profile-settings-label">
         Введите ваш юзернейм:
         <input class="left-right-5px" placeholder="Юзернейм" {{ if $.Username }} value="{{ $.Username }}" {{ end }}>

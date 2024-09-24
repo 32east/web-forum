@@ -15,24 +15,27 @@ import (
 	"web-forum/www/templates"
 )
 
-type LastRegisteredUser struct {
-	Id       int
-	Email    string
-	Username string
-
-	Sex       string
-	Avatar    string
-	CreatedAt string
-}
-
-type ChanCount struct {
+type chanCount struct {
 	Key   string
 	Value int
 }
 
+type AdmAccount struct {
+	Id          int
+	Username    string
+	Email       string
+	IsAdmin     bool
+	Sex         string
+	Avatar      string
+	Description string
+	SignText    string
+	CreatedAt   string
+	UpdatedAt   string
+}
+
 var lenCount = len("count:")
 
-func redisGet(chanRdb chan ChanCount, key string) {
+func redisGet(chanRdb chan chanCount, key string) {
 	conv := 0
 	err := rdb.RedisDB.Get(ctx, key).Scan(&conv)
 	key = key[lenCount:]
@@ -42,7 +45,7 @@ func redisGet(chanRdb chan ChanCount, key string) {
 		db.Postgres.QueryRow(ctx, fmtQuery).Scan(&conv)
 	}
 
-	chanRdb <- ChanCount{
+	chanRdb <- chanCount{
 		key, conv,
 	}
 }
@@ -101,7 +104,7 @@ func AdminMainPage(stdRequest *http.Request) {
 		return
 	}
 
-	chanRdb := make(chan ChanCount)
+	chanRdb := make(chan chanCount)
 	defer close(chanRdb)
 
 	var countsInfo = map[string]int{}
@@ -167,19 +170,6 @@ func AdminCategoriesPage(stdRequest *http.Request) {
 	templates.ContentAdd(stdRequest, templates.AdminCategories, categories)
 }
 
-type AdmAccount struct {
-	Id          int
-	Username    string
-	Email       string
-	IsAdmin     bool
-	Sex         string
-	Avatar      string
-	Description string
-	SignText    string
-	CreatedAt   string
-	UpdatedAt   string
-}
-
 func AdminUsersPage(r *http.Request) {
 	const errorFunction = "AdminUsersPage"
 
@@ -234,5 +224,9 @@ func AdminUsersPage(r *http.Request) {
 
 	addToMap(&rows, &sendInfo)
 
-	templates.ContentAdd(r, templates.AdminUsers, sendInfo)
+	contentToAdd := map[string]interface{}{
+		"Users": sendInfo,
+	}
+
+	templates.ContentAdd(r, templates.AdminUsers, contentToAdd)
 }

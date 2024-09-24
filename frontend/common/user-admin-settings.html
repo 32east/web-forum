@@ -1,7 +1,7 @@
 {{ define "user-admin-settings" }}
 <div id="profile-modal" style="display: none;">
     <div class="modal-content">
-        <span class="close-button">&times;</span>
+        <span class="close-button" style="text-align: right;font-size: 28px;cursor: pointer;justify-content: end;display: grid;float: right;">&times;</span>
         <h2>Настройки профиля</h2>
         <form style="display: grid;" id="profile-form">
             <label for="username">Имя пользователя:</label>
@@ -12,19 +12,32 @@
 
             <label for="sex">Пол:</label>
             <select id="sex" name="sex">
-                <option value="M">Мужской</option>
-                <option value="F">Женский</option>
-                <option value="O">Другой</option>
+                <option value="m">Мужской</option>
+                <option value="f">Женский</option>
+                <option value="">Не назначен</option>
             </select>
 
-            <label for="avatar">Аватар:</label>
-            <input type="text" id="avatar" name="avatar">
+            {{ if .Avatar }}
+            <div style="display: flex;">
+                <label class="profile-settings-label" style="margin: 5px 0; ">
+                    Аватарка:
+                    <img class="avatar" width="128" height="128" style="margin: 0 5px; height: 100%;" src="/./imgs/avatars/{{ $.Avatar }}" alt="avatar">
+                </label>
+
+                <button id="remove-avatar-button-2" style="height: 24px; margin: 10px 0;">Удалить</button>
+            </div>
+            {{ end }}
+
+            <label>
+                Аватарка:
+                <input class="left-right-5px" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+            </label>
 
             <label for="description">Описание:</label>
             <textarea id="description" name="description"></textarea>
 
             <label for="sign-text">Подпись:</label>
-            <textarea id="sign-text" name="sign-text"></textarea>
+            <textarea style="margin-bottom: 5px;" id="sign-text" name="sign-text"></textarea>
 
             <button type="submit">Сохранить</button>
         </form>
