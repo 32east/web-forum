@@ -50,7 +50,10 @@ func AdminMainPage(stdRequest *http.Request) {
 	const errorFunction = "AdminMainPage"
 
 	tx, err := db.Postgres.Begin(ctx)
-	defer tx.Commit(ctx)
+
+	if tx != nil {
+		defer tx.Commit(ctx)
+	}
 
 	if err != nil {
 		templates.ContentAdd(stdRequest, templates.AdminMain, nil)
@@ -206,7 +209,9 @@ func AdminUsersPage(r *http.Request) {
 
 	tx, rows, _, err := paginator.Query(preQuery)
 
-	defer tx.Commit(ctx)
+	if tx != nil {
+		defer tx.Commit(ctx)
+	}
 
 	if err != nil {
 		system.ErrLog(errorFunction, err)

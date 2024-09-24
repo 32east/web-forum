@@ -55,14 +55,17 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 	}
 
 	tx, err := db.Postgres.Begin(ctx)
-	defer func() {
-		switch answer["success"] {
-		case true:
-			tx.Commit(ctx)
-		case false:
-			tx.Rollback(ctx)
-		}
-	}()
+
+	if tx != nil {
+		defer func() {
+			switch answer["success"] {
+			case true:
+				tx.Commit(ctx)
+			case false:
+				tx.Rollback(ctx)
+			}
+		}()
+	}
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
@@ -256,14 +259,17 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 	}
 
 	tx, err := db.Postgres.Begin(ctx)
-	defer func() {
-		switch answer["success"] {
-		case true:
-			tx.Commit(ctx)
-		case false:
-			tx.Rollback(ctx)
-		}
-	}()
+
+	if tx != nil {
+		defer func() {
+			switch answer["success"] {
+			case true:
+				tx.Commit(ctx)
+			case false:
+				tx.Rollback(ctx)
+			}
+		}()
+	}
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "internal server error"

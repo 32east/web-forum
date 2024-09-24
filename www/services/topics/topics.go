@@ -53,8 +53,9 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 	}
 
 	tx, rows, topics, err := paginator.Query(preQuery)
-
-	defer tx.Commit(ctx)
+	if tx != nil {
+		defer tx.Commit(ctx)
+	}
 
 	if err != nil {
 		return nil, system.ErrLog(errorFunction, err)

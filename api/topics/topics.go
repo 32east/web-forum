@@ -129,14 +129,17 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	scanCategoryId := -1
 
 	tx, beginErr := db.Postgres.Begin(ctx)
-	defer func() {
-		switch answer["success"] {
-		case true:
-			tx.Commit(ctx)
-		case false:
-			tx.Rollback(ctx)
-		}
-	}()
+
+	if tx != nil {
+		defer func() {
+			switch answer["success"] {
+			case true:
+				tx.Commit(ctx)
+			case false:
+				tx.Rollback(ctx)
+			}
+		}()
+	}
 
 	if beginErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"

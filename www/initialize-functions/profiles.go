@@ -65,7 +65,10 @@ func Profiles() {
 		}
 
 		tx, err := db.Postgres.Begin(ctx)
-		defer tx.Commit(ctx)
+
+		if tx != nil {
+			defer tx.Commit(ctx)
+		}
 
 		if err != nil {
 			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to start transaction: %v", err))

@@ -27,7 +27,9 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 	}
 
 	tx, rows, paginatorList, err := paginator.Query(preQuery)
-	defer tx.Commit(ctx)
+	if tx != nil {
+		defer tx.Commit(ctx)
+	}
 
 	if err != nil {
 		system.ErrLog(errorFunction, err)
