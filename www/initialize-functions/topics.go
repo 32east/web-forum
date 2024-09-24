@@ -38,7 +38,12 @@ func Topics() {
 			page = 1
 		}
 
-		finalPaginator, _ := topics_messages.Get(topic, page)
+		finalPaginator, err := topics_messages.Get(&topic, page)
+
+		if err != nil {
+			system.ErrLog(errorFunc, err)
+		}
+
 		getAccount, ok := account.GetById(topic.Creator)
 
 		if ok != nil {

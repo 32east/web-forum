@@ -46,6 +46,6 @@ var ProfileSettings = Prepare("frontend/forum/profile-settings.html", "frontend/
 var CreateNewTopic = Prepare("frontend/forum/create-new-topic.html", "frontend/common/not-authorized.html")
 var Profile = Prepare("frontend/forum/profile.html", "frontend/common/not-authorized.html")
 
-var AdminMain = Prepare("frontend/admin/index.html", "frontend/admin/main.html")
+var AdminMain = Prepare("frontend/admin/index.html", "frontend/admin/main.html", "frontend/common/user-admin-panel.html", "frontend/common/user-admin-settings.html")
 var AdminCategories = Prepare("frontend/admin/index.html", "frontend/admin/categories.html")
-var AdminUsers = Prepare("frontend/admin/index.html", "frontend/admin/users.html")
+var AdminUsers = Prepare("frontend/admin/index.html", "frontend/admin/users.html", "frontend/common/user-admin-panel.html", "frontend/common/user-admin-settings.html")

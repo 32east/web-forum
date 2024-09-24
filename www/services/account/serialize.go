@@ -51,7 +51,7 @@ func (data Account) Serialize() string {
 		SeparateChar,
 		isAdmin,
 		SeparateChar,
-		data.Sex,
+		data.Sex.String,
 		SeparateChar,
 		data.Username,
 		SeparateChar,

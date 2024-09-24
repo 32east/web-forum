@@ -577,6 +577,47 @@ window.onload = function() {
         });
     });
 
+    document.querySelectorAll('.user-link').forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const modal = document.getElementById('profile-modal');
+            const username = link.getAttribute('data-username');
+            const email = link.getAttribute('data-email');
+            const sex = link.getAttribute('data-sex');
+            const avatar = link.getAttribute('data-avatar');
+            const description = link.getAttribute('data-description');
+            const signText = link.getAttribute('data-sign-text');
+
+            // Populate the modal with user data
+            document.getElementById('username').value = username;
+            document.getElementById('email').value = email;
+            document.getElementById('sex').value = sex;
+            document.getElementById('avatar').value = avatar;
+            document.getElementById('description').value = description;
+            document.getElementById('sign-text').value = signText;
+
+            modal.style.display = 'block';
+        });
+    });
+
+    // Close modal
+    document.querySelector('.close-button').addEventListener('click', () => {
+        document.getElementById('profile-modal').style.display = 'none';
+    });
+
+    // Handle form submission
+    document.getElementById('profile-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+
+        // Here you would typically send the formData to the server
+        // using fetch or another method to handle the update
+
+        console.log('Form Data:', Object.fromEntries(formData)); // For debugging
+        alert('Профиль обновлен!'); // Notify the user
+        document.getElementById('profile-modal').style.display = 'none'; // Close the modal
+    });
+
     // Get all elements with class "save-category-settings"
     const deleteButtons = document.querySelectorAll('.delete-category-settings');
 

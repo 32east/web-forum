@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 	"time"
@@ -46,6 +47,45 @@ func redisGet(chanRdb chan ChanCount, key string) {
 	}
 }
 
+func addToMap(rows *pgx.Rows, sendInfo *[]AdmAccount) {
+	for (*rows).Next() {
+		var sex, avatar, description, signText sql.NullString
+		var createdAt time.Time
+		var updatedAt sql.NullTime
+
+		account := AdmAccount{}
+		scanErr := (*rows).Scan(&account.Id, &account.Username, &account.Email, &account.IsAdmin, &sex, &avatar, &description, &signText, &createdAt, &updatedAt)
+
+		if scanErr != nil {
+			system.ErrLog("admin.addToMap", scanErr)
+		}
+
+		if sex.Valid {
+			account.Sex = sex.String
+		}
+
+		if avatar.Valid {
+			account.Avatar = avatar.String
+		}
+
+		if description.Valid {
+			account.Description = description.String
+		}
+
+		if signText.Valid {
+			account.SignText = signText.String
+		}
+
+		account.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
+
+		if updatedAt.Valid {
+			account.UpdatedAt = updatedAt.Time.Format("2006-01-02 15:04:05")
+		}
+
+		*sendInfo = append(*sendInfo, account)
+	}
+}
+
 func AdminMainPage(stdRequest *http.Request) {
 	const errorFunction = "AdminMainPage"
 
@@ -82,40 +122,13 @@ func AdminMainPage(stdRequest *http.Request) {
 		}
 	}
 
-	var users []LastRegisteredUser
-	rowsUser, err := tx.Query(ctx, `select id, username, email, sex, avatar, created_at from users as u order by id desc limit 10;`)
+	var users []AdmAccount
+	rowsUser, err := tx.Query(ctx, `select id, username, email, is_admin, sex, avatar, description, sign_text, created_at, updated_at from users as u order by id desc limit 10;`)
 
 	if err != nil {
 		system.ErrLog(errorFunction, err)
 	} else {
-		for rowsUser.Next() {
-			var avatar, sex sql.NullString
-			var registerDate time.Time
-			var fmtSex string
-
-			user := LastRegisteredUser{}
-			scan := rowsUser.Scan(&user.Id, &user.Username, &user.Email, &sex, &avatar, &registerDate)
-
-			if scan != nil {
-				system.ErrLog(errorFunction, scan)
-				continue
-			}
-
-			if avatar.Valid {
-				user.Avatar = avatar.String
-			}
-
-			if sex.String == "m" {
-				fmtSex = "Мужской"
-			} else if sex.String == "f" {
-				fmtSex = "Женский"
-			}
-
-			user.CreatedAt = registerDate.Format("2006-01-02 15:04:05")
-			user.Sex = fmtSex
-
-			users = append(users, user)
-		}
+		addToMap(&rowsUser, &users)
 	}
 
 	contentToAdd := map[string]interface{}{
@@ -219,42 +232,7 @@ func AdminUsersPage(r *http.Request) {
 
 	var sendInfo []AdmAccount
 
-	for rows.Next() {
-		var sex, avatar, description, signText sql.NullString
-		var createdAt time.Time
-		var updatedAt sql.NullTime
-
-		account := AdmAccount{}
-		scanErr := rows.Scan(&account.Id, &account.Username, &account.Email, &account.IsAdmin, &sex, &avatar, &description, &signText, &createdAt, &updatedAt)
-
-		if scanErr != nil {
-			system.ErrLog(errorFunction, scanErr)
-		}
-
-		if sex.Valid {
-			account.Sex = sex.String
-		}
-
-		if avatar.Valid {
-			account.Avatar = avatar.String
-		}
-
-		if description.Valid {
-			account.Description = description.String
-		}
-
-		if signText.Valid {
-			account.SignText = signText.String
-		}
-
-		account.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
-
-		if updatedAt.Valid {
-			account.UpdatedAt = updatedAt.Time.Format("2006-01-02 15:04:05")
-		}
-
-		sendInfo = append(sendInfo, account)
-	}
+	addToMap(&rows, &sendInfo)
 
 	templates.ContentAdd(r, templates.AdminUsers, sendInfo)
 }

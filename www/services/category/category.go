@@ -19,7 +19,7 @@ func GetAll() (*[]internal.Category, error) {
 	const errorFunction = "category.GetAll"
 
 	var forums []internal.Category
-	rows, err := db.Postgres.Query(ctx, "SELECT * FROM forums order by id;")
+	rows, err := db.Postgres.Query(ctx, "select * from forums order by id;")
 	defer rows.Close()
 
 	if err != nil {

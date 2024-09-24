@@ -7,20 +7,8 @@
     <br>
     <p>Последние зарегистрировавшиеся:</p>
     {{ range $.LastRegisteredUsers }}
-    <a href="/./profile/{{ .Id }}" style="display: flex;border: 1px solid rgb(200, 200, 200);padding:10px;margin-top: 5px;">
-        {{ if .Avatar }}
-        <img src="/./imgs/avatars/{{ .Avatar }}" loading="lazy" alt="{{ .Username }} avatar" class="avatar">
-        {{ else }}
-        <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .Username }} avatar" class="avatar">
-        {{ end }}
-        <div style="display: block; padding: 0 0 0 5px;">
-            <h1>{{ .Username }}</h1>
-            <div class="sign-container">
-                <p>Email: {{ .Email }}</p>
-                <p>Зарегистрировался: {{ .CreatedAt }}</p>
-            </div>
-        </div>
-    </a>
+    {{ template "user-block" . }}
     {{ end }}
+    {{ template "user-admin-settings" . }}
 
 {{ end }}

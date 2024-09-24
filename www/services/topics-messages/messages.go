@@ -11,15 +11,15 @@ import (
 
 var ctx = context.Background()
 
-func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
+func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 	const errorFunction = "topics_messages.Get"
 
-	queryCount := fmt.Sprintf("select message_count from topics where id = %d", topic.Id)
+	queryCount := fmt.Sprintf("select message_count from topics where id = %d", (*topic).Id)
 	preQuery := internal.PaginatorPreQuery{
 		TableName:     "messages",
 		OutputColumns: "id, topic_id, account_id, message, create_time, update_time",
 		WhereColumn:   "topic_id",
-		WhereValue:    topic.Id,
+		WhereValue:    (*topic).Id,
 		Page:          page,
 		QueryCount: internal.PaginatorQueryCount{
 			Query: queryCount,
@@ -54,6 +54,7 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 	}
 
 	usersInfo := account.GetFromSlice(tempUsers, tx)
+	parentId := (*topic).ParentId
 
 	for i := 0; i < len(tempMessages); i++ {
 		msg := tempMessages[i]
@@ -70,6 +71,7 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 			"Username":   acc.Username,
 			"Message":    msg.Message,
 			"CreateTime": msg.CreateTime.Format("2006-01-02 15:04:05"),
+			"CanRemove":  parentId != msg.Id,
 		}
 
 		if msg.UpdateTime.Valid {

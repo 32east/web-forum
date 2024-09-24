@@ -66,7 +66,11 @@ func GetById(id int) (*Account, error) {
 	result, err := rdb.RedisDB.Get(ctx, fmt.Sprintf("aID:%d", id)).Result()
 
 	if err == nil {
-		outputAccount, _ := Deserialize(result)
+		outputAccount, errDeserialize := Deserialize(result)
+
+		if errDeserialize != nil {
+			return nil, errDeserialize
+		}
 
 		FastCache[id] = FastCacheStruct{
 			Account: &outputAccount,
@@ -80,7 +84,7 @@ func GetById(id int) (*Account, error) {
 	row := db.Postgres.QueryRow(ctx, "SELECT * FROM users WHERE id = $1;", id)
 
 	if row == nil {
-		return accountInfo, fmt.Errorf("Account not found")
+		return nil, fmt.Errorf("Account not found")
 	}
 
 	queryErr := row.Scan(
@@ -99,7 +103,7 @@ func GetById(id int) (*Account, error) {
 	)
 
 	if queryErr != nil {
-		return accountInfo, queryErr
+		return nil, queryErr
 	}
 
 	rdb.RedisDB.Set(ctx, fmt.Sprintf("aID:%d", accountInfo.Id), accountInfo.Serialize(), time.Hour).Result()
