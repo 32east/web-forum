@@ -9,7 +9,6 @@ import (
 	"web-forum/system/db"
 	"web-forum/www/middleware"
 	"web-forum/www/services/account"
-	"web-forum/www/services/paginator"
 	topics_messages "web-forum/www/services/topics-messages"
 	"web-forum/www/templates"
 )
@@ -39,8 +38,7 @@ func Topics() {
 			page = 1
 		}
 
-		paginatorMessages, _ := topics_messages.Get(topic, page)
-		finalPaginator := paginator.Construct(*paginatorMessages)
+		finalPaginator, _ := topics_messages.Get(topic, page)
 		getAccount, ok := account.GetById(topic.Creator)
 
 		if ok != nil {
@@ -53,8 +51,8 @@ func Topics() {
 			"ForumName":            topic.ForumId,
 			"CreatorUsername":      getAccount.Username,
 			"CreateTime":           topic.CreateTime.Format("2006-01-02 15:04:05"),
-			"Messages":             paginatorMessages.Objects,
-			"PaginatorIsActivated": paginatorMessages.AllPages > 1,
+			"Messages":             finalPaginator.Objects,
+			"PaginatorIsActivated": finalPaginator.AllPages > 1,
 			"Paginator":            finalPaginator.PagesArray,
 			"CurrentPage":          page,
 		}

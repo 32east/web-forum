@@ -469,41 +469,42 @@ window.onload = function() {
         });
     }
 
-    // Обработчик для кнопки отправки сообщения
+
+// Обработчик для кнопки отправки сообщения
     if (sendMessageButton) {
         sendMessageButton.addEventListener('click', (e) => {
             e.preventDefault();
             const message = document.getElementById('message-textarea').value;
-            var shitsplit = document.location.href.split('/');
-            var topicId = shitsplit[shitsplit.length - 1];
 
-            console.log(topicId)
+            // Извлекаем ID топика из URL
+            var urlParts = window.location.pathname.split('/');
+            var topicId = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2]; // Получаем ID топика
 
-            if (topicId === "") {
-                topicId = shitsplit[shitsplit.length - 2]
-            }
+            console.log("ID топика:", topicId);
 
             fetch('/api/v1/topics/send-message', {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Указываем, что данные в формате JSON
+                },
                 body: JSON.stringify({
-                    topic_id: Number(topicId),
+                    topic_id: Number(topicId),  // Преобразуем ID топика в число
                     message: message
                 }),
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        if (data.page) {
-                            const url = new URL(window.location.href);
-                            url.searchParams.set("page", data.page);
-                            window.location.href = url.toString();
-                        } else {
-                            location.reload();
-                        }
+                        // Перезагружаем страницу, если сообщение успешно отправлено
+                        location.reload();
                     } else {
                         handleErrorAndRefreshToken(data, () => {
+                            // Повторная отправка сообщения, если была ошибка с токеном
                             fetch('/api/v1/topics/send-message', {
                                 method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
                                 body: JSON.stringify({
                                     topic_id: Number(topicId),
                                     message: message
@@ -512,13 +513,7 @@ window.onload = function() {
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.success) {
-                                        if (data.page) {
-                                            const url = new URL(window.location.href);
-                                            url.searchParams.set("page", data.page);
-                                            window.location.href = url.toString();
-                                        } else {
-                                            location.reload();
-                                        }
+                                        location.reload();
                                     }
                                 })
                                 .catch(error => console.error('Ошибка:', error));

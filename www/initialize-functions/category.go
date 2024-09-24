@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"web-forum/www/middleware"
 	"web-forum/www/services/category"
-	"web-forum/www/services/paginator"
 	"web-forum/www/services/topics"
 	"web-forum/www/templates"
 )
@@ -25,15 +24,14 @@ func Categorys() {
 		if errInt != nil {
 			currentPageInt = 0
 		}
-		topics, _ := topics.Get(forumId, currentPageInt)
-		finalPaginator := paginator.Construct(*topics)
+		finalPaginator, _ := topics.Get(forumId, currentPageInt)
 
 		contentToSend := map[string]interface{}{
 			"Id":                   forumId,
 			"Name":                 output.Name,
 			"Description":          output.Description,
-			"Topics":               topics.Objects,
-			"PaginatorIsActivated": topics.AllPages > 1,
+			"Topics":               finalPaginator.Objects,
+			"PaginatorIsActivated": finalPaginator.AllPages > 1,
 			"Paginator":            finalPaginator.PagesArray,
 			"CurrentPage":          currentPageInt,
 		}

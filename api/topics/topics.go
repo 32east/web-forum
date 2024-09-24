@@ -51,6 +51,7 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 
 	if errScan != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
+		fmt.Println(errScan)
 		return errScan
 	}
 
@@ -149,7 +150,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 		return nil
 	}
 
-	queryErr := tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time, parent_id) values ($1, $2, $3, now(), -1) returning id;", categoryId, name, accountId)
+	queryErr := tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time, parent_id) values ($1, $2, $3, now(), NULL) returning id;", categoryId, name, accountId)
 
 	lastInsertId := -1
 	errScan := queryErr.Scan(&lastInsertId)

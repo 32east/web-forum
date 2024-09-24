@@ -12,15 +12,13 @@ import (
 
 var ctx = context.Background()
 
-func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, paginatorMessages internal.Paginator, err error) {
-	// tableName string, outputColumns string, columnName string, id int, page int, queryCount string
-
+func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, paginatorList internal.Paginator, err error) {
 	const errorFunction = "paginator.Query"
 
 	tx, err = db.Postgres.Begin(ctx)
 
 	if err != nil {
-		return nil, nil, paginatorMessages, err
+		return nil, nil, paginatorList, err
 	}
 
 	var topicsCount float64
@@ -75,18 +73,20 @@ func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, pagin
 	}
 
 	if err != nil {
-		return nil, nil, paginatorMessages, err
+		return nil, nil, paginatorList, err
 	}
 
-	paginatorMessages.CurrentPage = page
-	paginatorMessages.AllPages = int(pagesCount)
+	paginatorList.CurrentPage = page
+	paginatorList.AllPages = int(pagesCount)
 
-	return tx, rows, paginatorMessages, nil
+	Construct(&paginatorList)
+
+	return tx, rows, paginatorList, nil
 }
 
-func Construct(paginatorList internal.Paginator) internal.PaginatorConstructed {
-	currentPageInt := paginatorList.CurrentPage
-	ourPages := paginatorList.AllPages
+func Construct(paginatorList *internal.Paginator) {
+	currentPageInt := (*paginatorList).CurrentPage
+	ourPages := (*paginatorList).AllPages
 	howMuchPagesWillBeVisible := internal.HowMuchPagesWillBeVisibleInPaginator
 	dividedBy2 := float64(howMuchPagesWillBeVisible) / 2
 	floorDivided := int(math.Floor(dividedBy2))
@@ -125,18 +125,16 @@ func Construct(paginatorList internal.Paginator) internal.PaginatorConstructed {
 		paginatorKey += 1
 	}
 
-	finalPaginator := internal.PaginatorConstructed{PagesArray: paginatorPages}
+	(*paginatorList).PagesArray = paginatorPages
 	currentPageInt += 1
 
 	if currentPageInt > 1 {
-		finalPaginator.Left.Activated = true
-		finalPaginator.Left.WhichPage = currentPageInt - 1
+		(*paginatorList).Left.Activated = true
+		(*paginatorList).Left.WhichPage = currentPageInt - 1
 	}
 
 	if currentPageInt < ourPages {
-		finalPaginator.Right.Activated = true
-		finalPaginator.Right.WhichPage = currentPageInt + 1
+		(*paginatorList).Right.Activated = true
+		(*paginatorList).Right.WhichPage = currentPageInt + 1
 	}
-
-	return finalPaginator
 }

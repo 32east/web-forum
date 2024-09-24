@@ -26,7 +26,7 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 		},
 	}
 
-	tx, rows, paginatorMessages, err := paginator.Query(preQuery)
+	tx, rows, paginatorList, err := paginator.Query(preQuery)
 	defer tx.Commit(ctx)
 
 	if err != nil {
@@ -82,8 +82,8 @@ func Get(topic internal.Topic, page int) (*internal.Paginator, error) {
 			messageInfo["SignText"] = acc.SignText.String
 		}
 
-		paginatorMessages.Objects = append(paginatorMessages.Objects, messageInfo)
+		paginatorList.Objects = append(paginatorList.Objects, messageInfo)
 	}
 
-	return &paginatorMessages, nil
+	return &paginatorList, nil
 }

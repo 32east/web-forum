@@ -96,22 +96,20 @@ type PaginatorPreQuery struct {
 	QueryCount PaginatorQueryCount
 }
 
-type Paginator struct {
-	Objects     []interface{} // Здесь наши обрезанные объекты
-	CurrentPage int           // Текущая страница
-	AllPages    int           // Все страницы
-	Err         error
-}
-
 type PaginatorArrows struct {
 	Activated bool
 	WhichPage int
 }
 
-type PaginatorConstructed struct {
-	PagesArray []int
-	Left       PaginatorArrows
-	Right      PaginatorArrows
+type Paginator struct {
+	PagesArray  []int
+	Objects     []interface{} // Здесь наши обрезанные объекты
+	CurrentPage int           // Текущая страница
+	AllPages    int           // Все страницы
+	Err         error
+
+	Left  PaginatorArrows
+	Right PaginatorArrows
 }
 
 type CountStruct struct {

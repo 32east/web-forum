@@ -205,7 +205,7 @@ func AdminUsersPage(r *http.Request) {
 	}
 
 	tx, rows, _, err := paginator.Query(preQuery)
-	fmt.Println(err)
+
 	defer tx.Commit(ctx)
 
 	if err != nil {

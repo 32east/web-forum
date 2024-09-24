@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS topics (
     create_time TIMESTAMP NOT NULL,
     update_time TIMESTAMP,
     message_count INTEGER NOT NULL DEFAULT 1,
-    parent_id integer not null,
+    parent_id integer,
     FOREIGN KEY (created_by) REFERENCES users(id) on delete cascade,
     FOREIGN KEY (forum_id) REFERENCES forums(id) on delete cascade
 );
