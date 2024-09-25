@@ -5,4 +5,30 @@
 {{ template "user-block" . }}
 {{ end }}
 {{ template "user-admin-settings" . }}
+
+<label>
+    {{ if $.PaginatorIsActivated }}
+    <div class="paginator-and-text-container">
+        {{ if $.PaginatorIsActivated }}
+        <div class="paginator-container">
+            {{ if $.PaginatorLeft }}
+            <a class="paginator-button" href="/./topics/{{ $.Id }}/?page={{ $.PaginatorLeft }}">‹</a>
+            {{ else }}
+            <a class="paginator-button paginator-block">‹</a>
+            {{ end }}
+
+            {{ range $.Paginator }}
+            <a class="paginator-button" href="/./topics/{{ $.Id }}/?page={{ . }}">{{ . }}</a>
+            {{ end }}
+
+            {{ if $.PaginatorRight }}
+            <a class="paginator-button" href="/./topics/{{ $.Id }}/?page={{ $.PaginatorRight }}">›</a>
+            {{ else }}
+            <a class="paginator-button paginator-block">›</a>
+            {{ end }}
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+</label>
 {{ end }}

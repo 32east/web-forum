@@ -1,8 +1,8 @@
 {{ define "user-admin-settings" }}
 <div id="profile-modal" style="display: none;">
     <div class="modal-content">
-        <span class="close-button" style="text-align: right;font-size: 28px;cursor: pointer;justify-content: end;display: grid;float: right;">&times;</span>
-        <h2>Настройки профиля</h2>
+        <h2 style="display: flex;justify-content: space-between;">Настройки профиля<span class="close-button" style="text-align: right;font-size: 28px;line-height:28px;cursor: pointer;">×</span></h2>
+
         <form style="display: grid;" id="profile-form">
             <label for="username">Имя пользователя:</label>
             <input type="text" id="username" name="username" required>
