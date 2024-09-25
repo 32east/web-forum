@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
@@ -12,6 +14,12 @@ import (
 var ctx = context.Background()
 
 func main() {
+	err := os.Mkdir(internal.AvatarsFilePath, 0777)
+
+	if err != nil && !os.IsExist(err) {
+		panic(err)
+	}
+
 	system.RegisterEnvironment()
 
 	conn := db.ConnectDatabase()

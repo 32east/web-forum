@@ -48,8 +48,12 @@ func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, pagin
 
 	var whereStr string
 
-	if id != 0 {
-		whereStr = fmt.Sprintf("where %s = $1", columnName)
+	if preQuery.WhereOperator == "" {
+		preQuery.WhereOperator = "="
+	}
+
+	if id != nil {
+		whereStr = fmt.Sprintf("where %s %s $1", columnName, preQuery.WhereOperator)
 	}
 
 	fmtQuery := fmt.Sprintf(`select %s
@@ -66,10 +70,10 @@ func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, pagin
 	)
 	order by id;`, outputColumns, tableName, tableName, whereStr, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages)
 
-	if id == 0 {
-		rows, err = tx.Query(ctx, fmtQuery)
-	} else {
+	if id != nil {
 		rows, err = tx.Query(ctx, fmtQuery, id)
+	} else {
+		rows, err = tx.Query(ctx, fmtQuery)
 	}
 
 	if err != nil {

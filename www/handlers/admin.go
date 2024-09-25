@@ -186,28 +186,38 @@ func AdminUsersPage(r *http.Request) {
 		page = pageNum
 	}
 
-	usersCount, usersCountErr := rdb.RedisDB.Get(ctx, "count:users").Result()
-
-	if usersCountErr != nil {
-		system.ErrLog(errorFunction, usersCountErr)
-
-		usersCount = "0"
-	}
-
-	conv, err := strconv.Atoi(usersCount)
-
-	if err != nil {
-		system.ErrLog(errorFunction, err)
-		conv = 1
-	}
+	search := r.FormValue("search")
 
 	preQuery := internal.PaginatorPreQuery{
 		TableName:     "users",
 		OutputColumns: "id, username, email, is_admin, sex, avatar, description, sign_text, created_at, updated_at",
 		Page:          page,
-		QueryCount: internal.PaginatorQueryCount{
-			PreparedValue: conv,
-		},
+	}
+
+	if search != "" {
+		var queryCount int
+		db.Postgres.QueryRow(ctx, "select count(*) from users where username like $1", "%"+search+"%").Scan(&queryCount)
+
+		preQuery.WhereColumn = "username"
+		preQuery.WhereOperator = "like"
+		preQuery.WhereValue = "%" + search + "%"
+	} else {
+		usersCount, usersCountErr := rdb.RedisDB.Get(ctx, "count:users").Result()
+
+		if usersCountErr != nil {
+			system.ErrLog(errorFunction, usersCountErr)
+
+			usersCount = "0"
+		}
+
+		conv, err := strconv.Atoi(usersCount)
+
+		if err != nil {
+			system.ErrLog(errorFunction, err)
+			conv = 0
+		}
+
+		preQuery.QueryCount.PreparedValue = conv
 	}
 
 	tx, rows, _, err := paginator.Query(preQuery)

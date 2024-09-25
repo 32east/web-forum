@@ -89,7 +89,8 @@ type PaginatorPreQuery struct {
 	TableName       string
 	OutputColumns   string
 	WhereColumn     string
-	WhereValue      int
+	WhereOperator   string
+	WhereValue      any
 	Page            int
 	ColumnsToOutput string
 

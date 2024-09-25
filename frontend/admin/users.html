@@ -1,6 +1,12 @@
 {{ define "content" }}
 <h1>Пользователи</h1>
 
+<label class="profile-settings-label">
+    Юзернейм:
+    <input id="search-users-by-username-or-login" class="left-right-5px">
+    <button id="username-login-send-query">Отправить</button>
+</label>
+
 {{ range $.Users }}
 {{ template "user-block" . }}
 {{ end }}

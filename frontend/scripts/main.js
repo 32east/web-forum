@@ -735,4 +735,22 @@ window.onload = function() {
                 });
         });
     });
+
+    if (document.getElementById('username-login-send-query')) {
+        const currentUrl = new URL(window.location.href);
+        document.getElementById('username-login-send-query').addEventListener('click', () => {
+            const inputValue = document.getElementById('search-users-by-username-or-login').value.trim(); // Удаляем лишние пробелы
+            if (inputValue) { // Проверяем, что поле не пустое
+                currentUrl.searchParams.set('search', inputValue);
+                window.location.href = currentUrl.toString();
+            }
+        });
+
+        // Устанавливаем значение в input, если в URL есть параметр search
+        const searchParam = currentUrl.searchParams.get('search');
+        if (searchParam) {
+            document.getElementById('search-users-by-username-or-login').value = searchParam;
+        }
+    }
+
 };

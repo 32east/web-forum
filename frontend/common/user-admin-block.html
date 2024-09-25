@@ -1,5 +1,5 @@
 {{ define "user-block" }}
-<a href="#" class="user-link" data-id="{{ .Id }}" data-username="{{ .Username }}" data-email="{{ .Email }}" data-sex="{{ .Sex }}" data-avatar="{{ .Avatar }}" data-description="{{ .Description }}" data-sign-text="{{ .SignText }}" style="display: flex; border: 1px solid rgb(200, 200, 200); padding:10px; margin-top: 5px;">
+<a class="user-link" data-id="{{ .Id }}" data-username="{{ .Username }}" data-email="{{ .Email }}" data-sex="{{ .Sex }}" data-avatar="{{ .Avatar }}" data-description="{{ .Description }}" data-sign-text="{{ .SignText }}" style="display: flex; cursor: pointer; border: 1px solid rgb(200, 200, 200); padding:10px; margin-top: 5px;">
     {{ if .Avatar }}
     <img src="/./imgs/avatars/{{ .Avatar }}" loading="lazy" alt="{{ .Username }} avatar" class="avatar">
     {{ else }}
