@@ -65,9 +65,9 @@ func RegisterURLs() {
 	middleware.Page("/topic/create", "Создание нового топика", handlers.TopicCreate)
 	middleware.Page("/profile/settings", "Настройки аккаунта", handlers.HandleProfileSettings)
 
-	middleware.Page("/admin", "Админ панель", handlers.AdminMainPage)
-	middleware.Page("/admin/categories", "Категории - Админ панель", handlers.AdminCategoriesPage)
-	middleware.Page("/admin/users", "Юзеры - Админ панель", handlers.AdminUsersPage)
+	middleware.AdminPage("/admin", "Админ панель", handlers.AdminMainPage)
+	middleware.AdminPage("/admin/categories", "Категории - Админ панель", handlers.AdminCategoriesPage)
+	middleware.AdminPage("/admin/users", "Юзеры - Админ панель", handlers.AdminUsersPage)
 
 	middleware.API("/api/v1/auth/login", auth.HandleLogin)
 	middleware.API("/api/v1/auth/register", auth.HandleRegister)
@@ -102,7 +102,7 @@ func RegisterURLs() {
 	rdb.RedisDB.Set(ctx, "count:topics", countInfo.Topics, 0)
 	rdb.RedisDB.Set(ctx, "count:messages", countInfo.Messages, 0)
 
-	httpErr := http.ListenAndServe(":8081", nil)
+	httpErr := http.ListenAndServe(":8080", nil)
 
 	system.FatalLog(errorFunction, httpErr)
 }
