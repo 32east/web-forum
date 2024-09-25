@@ -17,20 +17,12 @@
                 <option value="">Не назначен</option>
             </select>
 
-            {{ if .Avatar }}
-            <div style="display: flex;">
-                <label class="profile-settings-label" style="margin: 5px 0; ">
-                    Аватарка:
-                    <img class="avatar" width="128" height="128" style="margin: 0 5px; height: 100%;" src="/./imgs/avatars/{{ $.Avatar }}" alt="avatar">
-                </label>
-
-                <button id="remove-avatar-button-2" style="height: 24px; margin: 10px 0;">Удалить</button>
-            </div>
-            {{ end }}
-
+            <label for="avatar" style="display:flex;">Текущая аватарка:
+            <img style="margin: 3px; max-width: 78px; max-height: 78px; border: 1px solid rgb(200, 200, 200);" id="avatar" name="avatar" alt="current avatar" src="/./imgs/default-avatar.jpg">
+            </label>
             <label>
                 Аватарка:
-                <input class="left-right-5px" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+                <input class="left-right-5px" type="file"  name="avatar" accept="image/png, image/jpeg" />
             </label>
 
             <label for="description">Описание:</label>

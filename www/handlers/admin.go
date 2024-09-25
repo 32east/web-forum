@@ -195,6 +195,7 @@ func AdminUsersPage(r *http.Request) {
 	}
 
 	if search != "" {
+		// Это будет медленно.
 		var queryCount int
 		db.Postgres.QueryRow(ctx, "select count(*) from users where username like $1", "%"+search+"%").Scan(&queryCount)
 

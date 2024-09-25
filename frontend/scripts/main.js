@@ -587,7 +587,11 @@ window.onload = function() {
             document.getElementById('username').value = username;
             document.getElementById('email').value = email;
             document.getElementById('sex').value = sex;
-            document.getElementById('avatar').src = avatar;
+            if (avatar === "") {
+                document.getElementById('avatar').src = "/./imgs/default-avatar.jpg";
+            } else {
+                document.getElementById('avatar').src = "/./imgs/avatars/" + avatar;
+            }
             document.getElementById('description').value = description;
             document.getElementById('sign-text').value = signText;
 
