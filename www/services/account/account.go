@@ -35,22 +35,23 @@ type FastCacheStruct struct {
 var FastCache = make(map[int]FastCacheStruct)
 
 func ReadFromCookie(cookie *http.Cookie) (*Account, error) {
+	var defaultAccount = Account{}
 	tokenInfo, tokenErr := jwt_token.GetInfo(cookie.Value)
 
 	if tokenErr != nil {
-		return nil, tokenErr
+		return &defaultAccount, tokenErr
 	}
 
 	id, ok := tokenInfo["id"].(int64)
 
 	if !ok {
-		return nil, fmt.Errorf("id not int")
+		return &defaultAccount, fmt.Errorf("id not int")
 	}
 
 	accInfo, errGetAccount := GetById(int(id))
 
 	if errGetAccount != nil {
-		return nil, errGetAccount
+		return &defaultAccount, errGetAccount
 	}
 
 	return accInfo, nil

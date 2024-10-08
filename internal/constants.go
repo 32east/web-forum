@@ -90,6 +90,7 @@ type PaginatorPreQuery struct {
 	OutputColumns   string
 	WhereColumn     string
 	WhereOperator   string
+	OrderReverse    bool
 	WhereValue      any
 	Page            int
 	ColumnsToOutput string

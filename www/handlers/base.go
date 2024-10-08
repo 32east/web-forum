@@ -9,8 +9,6 @@ import (
 var ctx = context.Background()
 
 func Base(stdRequest *http.Request) (map[string]interface{}, *account.Account) {
-	// go account.TokensRefreshInRedis(stdRequest, writer) // TODO: Расскомент!!!
-
 	infoToSend := make(map[string]interface{})
 	cookie, err := stdRequest.Cookie("access_token")
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strings"
 	"web-forum/internal"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
@@ -38,6 +39,12 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	}
 
 	topicId, message := jsonData.TopicId, jsonData.Message
+
+	if strings.Trim(message, " ") == "" {
+		answer["success"], answer["reason"] = false, "message is empty"
+		return nil
+	}
+
 	scanTopicId := -1
 
 	tx, err := db.Postgres.Begin(ctx)
@@ -120,6 +127,16 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	}
 
 	name, msg, categoryId, accountId := topic.Name, topic.Message, topic.CategoryId, accInfo.Id
+
+	if strings.Trim(name, " ") == "" {
+		answer["success"], answer["reason"] = false, "topic name is empty"
+		return nil
+	}
+
+	if strings.Trim(msg, " ") == "" {
+		answer["success"], answer["reason"] = false, "message is empty"
+		return nil
+	}
 
 	if internal.Utf8Length(name) > 128 {
 		answer["success"], answer["reason"] = false, "name too long"

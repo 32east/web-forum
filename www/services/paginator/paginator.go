@@ -28,6 +28,13 @@ func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, pagin
 	var columnName = preQuery.WhereColumn
 	var id = preQuery.WhereValue
 
+	var orderStr string
+	var orderDesc = preQuery.OrderReverse
+
+	if orderDesc {
+		orderStr = "desc"
+	}
+
 	if preQuery.QueryCount.PreparedValue != 0 {
 		topicsCount = float64(preQuery.QueryCount.PreparedValue)
 	} else {
@@ -66,9 +73,9 @@ func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, pagin
 			offset %d
 			limit %d
 		)
-		order by id
+		order by id %s
 	)
-	order by id;`, outputColumns, tableName, tableName, whereStr, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages)
+	order by id %s;`, outputColumns, tableName, tableName, whereStr, (page-1)*internal.MaxPaginatorMessages, internal.MaxPaginatorMessages, orderStr, orderStr)
 
 	if id != nil {
 		rows, err = tx.Query(ctx, fmtQuery, id)

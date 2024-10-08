@@ -654,14 +654,46 @@ window.onload = function() {
             });
         }
 
+        document.getElementById('profile-delete').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            formData.append("id", lastLink.getAttribute('data-id'));
+
+            fetch('/api/v1/admin/users/delete', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log("SUCCESS");
+                        location.reload();
+                    } else {
+                        handleErrorAndRefreshToken(data, () => {
+                            fetch('/api/v1/admin/users/delete', {
+                                method: 'POST',
+                                body: formData,
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        location.reload();
+                                    }
+                                })
+                                .catch(error => console.error('Ошибка:', error));
+                        });
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
+
+            document.getElementById('profile-modal').style.display = 'none'; // Close the modal
+        })
+
         document.getElementById('profile-form').addEventListener('submit', (event) => {
             event.preventDefault();
             const formData = new FormData(event.target);
 
-            // Here you would typically send the formData to the server
-            // using fetch or another method to handle the update
-
-            console.log('Form Data:', Object.fromEntries(formData)); // For debugging
             formData.append("id", lastLink.getAttribute('data-id'));
             fetch('/api/v1/admin/users/edit', {
                 method: 'POST',
