@@ -46,6 +46,7 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 		WhereColumn:   "forum_id",
 		WhereValue:    forumId,
 		Page:          page,
+		OrderReverse:  true,
 		QueryCount: internal.PaginatorQueryCount{
 			PreparedValue: preparedValue,
 			Query:         sqlCount,

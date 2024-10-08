@@ -20,7 +20,6 @@ func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 		OutputColumns: "id, topic_id, account_id, message, create_time, update_time",
 		WhereColumn:   "topic_id",
 		WhereValue:    (*topic).Id,
-		OrderReverse:  true,
 		Page:          page,
 		QueryCount: internal.PaginatorQueryCount{
 			Query: queryCount,
