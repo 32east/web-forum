@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
+	"os/signal"
 	"web-forum/internal"
 	"web-forum/system"
 	"web-forum/system/db"
@@ -14,6 +16,9 @@ import (
 var ctx = context.Background()
 
 func main() {
+	shutdownChan := make(chan os.Signal)
+	signal.Notify(shutdownChan, os.Interrupt)
+
 	err := os.Mkdir(internal.AvatarsFilePath, 0777)
 
 	if err != nil && !os.IsExist(err) {
@@ -33,6 +38,8 @@ func main() {
 	redis.Do(ctx, "flushdb")
 
 	go timer.Start()
+	go www.RegisterURLs()
 
-	www.RegisterURLs()
+	<-shutdownChan
+	log.Println("Сайт был закрыт.")
 }

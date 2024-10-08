@@ -13,7 +13,7 @@ import (
 var ctx = context.Background()
 
 func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, paginatorList internal.Paginator, err error) {
-	const errorFunction = "paginator.Query"
+	var errorFunction = "paginator.Query" + preQuery.TableName
 
 	tx, err = db.Postgres.Begin(ctx)
 

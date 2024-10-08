@@ -21,6 +21,25 @@ import (
 )
 
 var ctx = context.Background()
+var specialChars = "№^?!@#$%^&*()_+ <>?:{}|;'/.,`~"
+
+func containIllegalChars(str string) bool {
+	var containIllegalCharacters = strings.IndexFunc(str, func(r rune) bool {
+		if r >= 'А' && r <= 'я' {
+			return false
+		} else if r >= '0' && r <= '9' {
+			return false
+		}
+
+		if strings.ContainsRune(specialChars, r) {
+			return false
+		}
+
+		return r < 'A' || r > 'z'
+	})
+
+	return containIllegalCharacters >= 0
+}
 
 func ProcessSettings(accountData *account.Account, reader *http.Request, answer *map[string]interface{}) (err error) {
 	username := reader.FormValue("username")
@@ -50,18 +69,10 @@ func ProcessSettings(accountData *account.Account, reader *http.Request, answer 
 
 		username = internal.FormatString(username)
 
-		containIllegalCharacters := strings.IndexFunc(username, func(r rune) bool {
-			if r >= 'А' && r <= 'я' {
-				return false
-			} else if r >= '0' && r <= '9' {
-				return false
-			}
+		var illegal = containIllegalChars(signText)
 
-			return r < 'A' || r > 'z'
-		})
-
-		if containIllegalCharacters >= 0 {
-			(*answer)["success"], (*answer)["reason"] = false, "username contains illegal characters"
+		if illegal {
+			(*answer)["success"], (*answer)["reason"] = false, "illegal username"
 			return nil
 		}
 
@@ -78,6 +89,13 @@ func ProcessSettings(accountData *account.Account, reader *http.Request, answer 
 			return nil
 		}
 
+		var illegal = containIllegalChars(description)
+
+		if illegal {
+			(*answer)["success"], (*answer)["reason"] = false, "illegal description"
+			return nil
+		}
+
 		valuesToChange["description"] = description
 	} else {
 		valuesToChange["description"] = nil
@@ -91,6 +109,14 @@ func ProcessSettings(accountData *account.Account, reader *http.Request, answer 
 
 	if signText != "" {
 		signText = internal.FormatString(signText)
+
+		var illegal = containIllegalChars(signText)
+
+		if illegal {
+			(*answer)["success"], (*answer)["reason"] = false, "illegal sign text"
+			return nil
+		}
+
 		valuesToChange["sign_text"] = signText
 	} else {
 		valuesToChange["sign_text"] = nil
