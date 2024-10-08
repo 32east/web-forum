@@ -21,7 +21,7 @@ import (
 )
 
 var ctx = context.Background()
-var specialChars = "№^?!@#$%^&*()_+ <>?:{}|;'/.,`~"
+var specialChars = "№^?=!@#$%^&*()_+ <>?:{}|;'/.,`~"
 
 func containIllegalChars(str string) bool {
 	var containIllegalCharacters = strings.IndexFunc(str, func(r rune) bool {

@@ -28,7 +28,7 @@ func HandleCategoryCreate(w http.ResponseWriter, r *http.Request, answer map[str
 	default:
 	}
 
-	_, execErr := db.Postgres.Exec(ctx, `insert into forums (forum_name, forum_description) values ($1, $2);`, objCategory.Name, objCategory.Description)
+	_, execErr := db.Postgres.Exec(ctx, `insert into categorys (name, description) values ($1, $2);`, objCategory.Name, objCategory.Description)
 
 	if execErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
@@ -61,7 +61,7 @@ func HandleCategoryEdit(w http.ResponseWriter, r *http.Request, answer map[strin
 	default:
 	}
 
-	_, execErr := db.Postgres.Exec(ctx, `update forums set forum_name = $1, forum_description = $2 where id = $3;`, objCategory.Name, objCategory.Description, objCategory.Id)
+	_, execErr := db.Postgres.Exec(ctx, `update categorys set name = $1, description = $2 where id = $3;`, objCategory.Name, objCategory.Description, objCategory.Id)
 
 	if execErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
@@ -74,15 +74,15 @@ func HandleCategoryEdit(w http.ResponseWriter, r *http.Request, answer map[strin
 }
 
 func HandleCategoryDelete(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
-	query := internal.CategoryDelete{}
-	newDecoder := json.NewDecoder(r.Body).Decode(&query)
+	var query = internal.DeleteObject{}
+	var newDecoder = json.NewDecoder(r.Body).Decode(&query)
 
 	if newDecoder != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return newDecoder
 	}
 
-	_, execErr := db.Postgres.Exec(ctx, `delete from forums where id = $1;`, query.Id)
+	var _, execErr = db.Postgres.Exec(ctx, `delete from categorys where id = $1;`, query.Id)
 
 	if execErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"

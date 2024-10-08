@@ -111,7 +111,7 @@ func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 		AccountColumn: "created_by",
 		ColumnParent:  "forum_id",
 		TableName:     "topics",
-		Update:        "forums",
+		Update:        "categorys",
 		CountColumn:   "topics_count",
 		Tx:            &tx,
 	}

@@ -79,14 +79,15 @@ func RegisterURLs() {
 
 	middleware.API("/api/v1/profile/settings", profile.HandleSettings)
 
-	middleware.AdminAPI("/api/v1/admin/users/edit", "POST", admin.HandleProfileSettings)
-	middleware.AdminAPI("/api/v1/admin/users/delete", "POST", admin.HandleProfileDelete)
-
-	middleware.AdminAPI("/api/v1/admin/message/delete", "POST", admin.HandleMessageDelete)
-
 	middleware.AdminAPI("/api/v1/admin/category/create", "POST", admin.HandleCategoryCreate)
+
+	middleware.AdminAPI("/api/v1/admin/users/edit", "POST", admin.HandleProfileSettings)
 	middleware.AdminAPI("/api/v1/admin/category/edit", "POST", admin.HandleCategoryEdit)
+
 	middleware.AdminAPI("/api/v1/admin/category/delete", "POST", admin.HandleCategoryDelete)
+	middleware.AdminAPI("/api/v1/admin/message/delete", "POST", admin.HandleMessageDelete)
+	middleware.AdminAPI("/api/v1/admin/topics/delete", "POST", admin.HandleTopicDelete)
+	middleware.AdminAPI("/api/v1/admin/users/delete", "POST", admin.HandleProfileDelete)
 
 	initialize_functions.Categorys()
 	initialize_functions.Topics()

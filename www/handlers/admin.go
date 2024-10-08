@@ -147,7 +147,7 @@ func AdminMainPage(stdRequest *http.Request) {
 func AdminCategoriesPage(stdRequest *http.Request) {
 	const errorFunction = "AdminCategoriesPage"
 
-	rows, err := db.Postgres.Query(ctx, `select * from forums order by id;`)
+	rows, err := db.Postgres.Query(ctx, `select * from categorys order by id;`)
 
 	if err != nil {
 		system.ErrLog(errorFunction, err)

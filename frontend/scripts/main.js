@@ -101,6 +101,28 @@ window.onload = function() {
             const dropdown = messageItem.querySelector('.dropdown');
             dropdown.style.display = 'none';
         }
+
+        // Проверяем, кликнули ли на "Удалить сообщение"
+        if (target.classList.contains('delete-topic')) {
+            const messageItem = target.closest('li');
+            const messageId = messageItem.id.split('-')[0]; // Извлекаем ID сообщения
+
+            fetch('/api/v1/admin/topics/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: Number(messageId) })
+            }).then(response => response.json()).then(response => {
+                if (response.success === true) {
+                    location.reload();
+                }
+            });
+
+            // Закрываем выпадающий список
+            const dropdown = messageItem.querySelector('.dropdown');
+            dropdown.style.display = 'none';
+        }
     });
 
     // Функция для обработки ошибок и обновления токенов

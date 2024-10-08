@@ -18,8 +18,8 @@ func GetAll() (*[]internal.Category, error) {
 
 	const errorFunction = "category.GetAll"
 
-	var forums []internal.Category
-	rows, err := db.Postgres.Query(ctx, "select * from forums order by id;")
+	var categorys []internal.Category
+	rows, err := db.Postgres.Query(ctx, "select * from categorys order by id;")
 	defer rows.Close()
 
 	if err != nil {
@@ -34,16 +34,16 @@ func GetAll() (*[]internal.Category, error) {
 			system.FatalLog(errorFunction, scanErr)
 		}
 
-		forums = append(forums, category)
+		categorys = append(categorys, category)
 	}
 
-	Cache = &forums
+	Cache = &categorys
 
 	for _, value := range *Cache {
 		CacheMap[value.Id] = &value
 	}
 
-	return &forums, nil
+	return &categorys, nil
 }
 
 func GetInfo(id int) *internal.Category {

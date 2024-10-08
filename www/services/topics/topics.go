@@ -37,7 +37,7 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 
 		preparedValue = conv
 	} else {
-		sqlCount = fmt.Sprintf("select topics_count from forums where id = %d;", forumId)
+		sqlCount = fmt.Sprintf("select topics_count from categorys where id = %d;", forumId)
 	}
 
 	preQuery := internal.PaginatorPreQuery{

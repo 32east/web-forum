@@ -19,14 +19,14 @@
                     <br>
                     <span style="white-space: pre-line;" class="message-text">{{ .Message }}</span>
 
-                    {{ if $.IsAdmin }}{{ if .CanRemove }}
+                    {{ if $.IsAdmin }}
                     <div class="options" style="position: absolute; top: 5px; right: 5px;">
                         <span class="dots" style="cursor: pointer;">&#x2022;&#x2022;&#x2022;</span>
                         <div class="dropdown" style="width:200px;display: none; position: absolute; right: 0; background: white; border: 1px solid rgb(200, 200, 200); z-index: 1;">
-                            <div class="delete-message" style="padding: 3px; cursor: pointer; text-align: center;">Удалить сообщение</div>
+                            <div class="{{- if .IsParentedMessage -}}delete-topic{{- else -}}delete-message{{- end -}}" style="padding: 3px; cursor: pointer; text-align: center;">Удалить {{ if .IsParentedMessage -}} топик {{- else -}} сообщение{{- end -}}</div>
                         </div>
                     </div>
-                    {{ end }}{{ end }}
+                    {{ end }}
                 </div>
             </div>
 

@@ -163,7 +163,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 		return beginErr
 	}
 
-	row := tx.QueryRow(ctx, "select id from forums where id = $1;", categoryId).Scan(&scanCategoryId)
+	row := tx.QueryRow(ctx, "select id from categorys where id = $1;", categoryId).Scan(&scanCategoryId)
 
 	if row != nil {
 		answer["success"], answer["reason"] = false, "category not founded"
@@ -192,7 +192,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	}
 
 	go func() {
-		db.Postgres.Exec(ctx, "update forums set topics_count = topics_count + 1 where id = $1;", categoryId)
+		db.Postgres.Exec(ctx, "update categorys set topics_count = topics_count + 1 where id = $1;", categoryId)
 		rdb.RedisDB.Do(ctx, "incrby", "count:topics", 1)
 	}()
 

@@ -8,17 +8,17 @@ import (
 )
 
 func TopicCreate(stdRequest *http.Request) {
-	forums, err := category.GetAll()
+	var categoryList, err = category.GetAll()
 
 	if err != nil {
 		panic(err)
 	}
 
 	var categorys []interface{}
-	currentCategory := stdRequest.FormValue("category")
+	var currentCategory = stdRequest.FormValue("category")
 
-	for _, output := range *forums {
-		forumId := output.Id
+	for _, output := range *categoryList {
+		var forumId = output.Id
 
 		categorys = append(categorys, map[string]interface{}{
 			"Id":         output.Id,

@@ -60,7 +60,7 @@ type MessageDelete struct {
 	Id int `json:"id"`
 }
 
-type CategoryDelete struct {
+type DeleteObject struct {
 	Id int `json:"id"`
 }
 

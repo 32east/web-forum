@@ -66,12 +66,12 @@ func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 		}
 
 		messageInfo := map[string]interface{}{
-			"MessageId":  msg.Id,
-			"CreatorId":  msg.CreatorId,
-			"Username":   acc.Username,
-			"Message":    msg.Message,
-			"CreateTime": msg.CreateTime.Format("2006-01-02 15:04:05"),
-			"CanRemove":  parentId != msg.Id,
+			"MessageId":         msg.Id,
+			"CreatorId":         msg.CreatorId,
+			"Username":          acc.Username,
+			"Message":           msg.Message,
+			"CreateTime":        msg.CreateTime.Format("2006-01-02 15:04:05"),
+			"IsParentedMessage": parentId == msg.Id,
 		}
 
 		if msg.UpdateTime.Valid {

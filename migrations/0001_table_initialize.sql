@@ -13,10 +13,10 @@ CREATE TABLE IF NOT EXISTS users (
 	updated_at TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS forums (
+CREATE TABLE IF NOT EXISTS categorys (
     id serial PRIMARY KEY,
-    forum_name VARCHAR(128),
-    forum_description VARCHAR(2048),
+    name VARCHAR(128),
+    description VARCHAR(2048),
     topics_count INTEGER NOT NULL DEFAULT 0
 );
 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS topics (
     message_count INTEGER NOT NULL DEFAULT 1,
     parent_id integer,
     FOREIGN KEY (created_by) REFERENCES users(id) on delete cascade,
-    FOREIGN KEY (forum_id) REFERENCES forums(id) on delete cascade
+    FOREIGN KEY (forum_id) REFERENCES categorys(id) on delete cascade
 );
 
 CREATE TABLE IF NOT EXISTS messages (
