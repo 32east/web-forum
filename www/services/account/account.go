@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
@@ -33,6 +34,7 @@ type FastCacheStruct struct {
 }
 
 var FastCache = make(map[int]FastCacheStruct)
+var rwMutex = sync.RWMutex{}
 
 func ReadFromCookie(cookie *http.Cookie) (*Account, error) {
 	var defaultAccount = Account{}
@@ -73,10 +75,12 @@ func GetById(id int) (*Account, error) {
 			return nil, errDeserialize
 		}
 
+		rwMutex.Lock()
 		FastCache[id] = FastCacheStruct{
 			Account: &outputAccount,
 			Time:    time.Now().Add(time.Second * 10),
 		}
+		rwMutex.Unlock()
 
 		return &outputAccount, nil
 	}
