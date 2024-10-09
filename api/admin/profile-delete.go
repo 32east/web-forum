@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"net/http"
+	"os"
 	"strconv"
+	"web-forum/internal"
 	"web-forum/system/db"
 	"web-forum/system/rdb"
 	"web-forum/www/services/account"
@@ -68,7 +70,7 @@ func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 		return nil
 	}
 
-	_, errGetAccount := account.GetById(conv)
+	accountData, errGetAccount := account.GetById(conv)
 
 	if errGetAccount != nil {
 		answer["success"], answer["reason"] = false, "invalid user"
@@ -136,6 +138,8 @@ func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 		answer["success"], answer["reason"] = false, "invalid user"
 		return nil
 	}
+
+	os.Remove(internal.AvatarsFilePath + accountData.Avatar.String)
 
 	answer["success"] = true
 	rdb.RedisDB.Del(ctx, fmt.Sprintf("aID:%d", conv))
