@@ -6,23 +6,22 @@ import (
 )
 
 func RegisterEnvironment() {
-	file, err := os.ReadFile(".env")
+	var file, err = os.ReadFile(".env")
 
 	if err != nil {
 		panic(err)
 	}
 
-	envRead := string(file)
+	var envRead = string(file)
 
 	for _, str := range strings.Fields(envRead) {
-		indexOfSeparator := strings.Index(str, "=")
-		key := str[:indexOfSeparator]
-		value := str[indexOfSeparator+1:]
+		var indexOfSeparator = strings.Index(str, "=")
+		var key = str[:indexOfSeparator]
+		var value = str[indexOfSeparator+1:]
+		var envErr = os.Setenv(key, value)
 
-		err := os.Setenv(key, value)
-
-		if err != nil {
-			panic(err)
+		if envErr != nil {
+			panic(envErr)
 		}
 	}
 }

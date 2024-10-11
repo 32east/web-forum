@@ -47,7 +47,7 @@ func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, pagin
 		}
 	}
 
-	pagesCount := math.Ceil(topicsCount / internal.MaxPaginatorMessages)
+	var pagesCount = math.Ceil(topicsCount / internal.MaxPaginatorMessages)
 
 	if float64(page) > pagesCount || float64(page) < 0 {
 		page = 1
@@ -96,12 +96,12 @@ func Query(preQuery internal.PaginatorPreQuery) (tx pgx.Tx, rows pgx.Rows, pagin
 }
 
 func Construct(paginatorList *internal.Paginator) {
-	currentPageInt := (*paginatorList).CurrentPage
-	ourPages := (*paginatorList).AllPages
-	howMuchPagesWillBeVisible := internal.HowMuchPagesWillBeVisibleInPaginator
-	dividedBy2 := float64(howMuchPagesWillBeVisible) / 2
-	floorDivided := int(math.Floor(dividedBy2))
-	ceilDivided := int(math.Ceil(dividedBy2))
+	var currentPageInt = (*paginatorList).CurrentPage
+	var ourPages = (*paginatorList).AllPages
+	var howMuchPagesWillBeVisible = internal.HowMuchPagesWillBeVisibleInPaginator
+	var dividedBy2 = float64(howMuchPagesWillBeVisible) / 2
+	var floorDivided = int(math.Floor(dividedBy2))
+	var ceilDivided = int(math.Ceil(dividedBy2))
 
 	if ourPages < internal.HowMuchPagesWillBeVisibleInPaginator {
 		howMuchPagesWillBeVisible = ourPages
@@ -112,7 +112,7 @@ func Construct(paginatorList *internal.Paginator) {
 	}
 
 	currentPageInt = currentPageInt - 1 // Массив с нуля начинается.
-	limitMin, limitMax := currentPageInt-floorDivided, currentPageInt+floorDivided
+	var limitMin, limitMax = currentPageInt - floorDivided, currentPageInt + floorDivided
 
 	if limitMin < 0 {
 		limitMin = 0
@@ -128,8 +128,8 @@ func Construct(paginatorList *internal.Paginator) {
 		limitMin = ourPages - howMuchPagesWillBeVisible
 	}
 
-	paginatorPages := make([]int, limitMax-limitMin+1)
-	paginatorKey := 0
+	var paginatorPages = make([]int, limitMax-limitMin+1)
+	var paginatorKey = 0
 
 	for showedPage := limitMin; showedPage <= limitMax; showedPage++ {
 		paginatorPages[paginatorKey] = showedPage + 1

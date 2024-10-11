@@ -13,10 +13,10 @@ type sexSelect struct {
 }
 
 func HandleProfileSettings(stdRequest *http.Request) {
-	reqCtx := stdRequest.Context()
-	account := reqCtx.Value("AccountData").(*account2.Account)
-	infoToSend := reqCtx.Value("InfoToSend").(map[string]interface{})
-	authorized := infoToSend["Authorized"]
+	var reqCtx = stdRequest.Context()
+	var account = reqCtx.Value("AccountData").(*account2.Account)
+	var infoToSend = reqCtx.Value("InfoToSend").(map[string]interface{})
+	var authorized = infoToSend["Authorized"]
 
 	if !authorized.(bool) {
 		infoToSend["Title"] = "Нет доступа"
@@ -26,8 +26,7 @@ func HandleProfileSettings(stdRequest *http.Request) {
 
 	infoToSend["Title"] = "Настройки профиля"
 
-	contentToAdd := map[string]interface{}{}
-
+	var contentToAdd = make(map[string]interface{})
 	contentToAdd["Email"] = account.Email
 	contentToAdd["Username"] = account.Username
 

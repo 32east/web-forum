@@ -18,31 +18,32 @@ var ctx = context.Background()
 
 func Profiles() {
 	middleware.Mult("/profile/([0-9]+)", func(w http.ResponseWriter, r *http.Request, accountId int) {
-		acc, accErr := account.GetById(accountId)
+		var acc, accErr = account.GetById(accountId)
 
 		if accErr != nil {
 			middleware.Push404(w, r)
 			return
 		}
 
-		infoToSend := r.Context().Value("InfoToSend").(map[string]interface{})
+		var infoToSend = r.Context().Value("InfoToSend").(map[string]interface{})
 		infoToSend["Title"] = acc.Username
 
-		timeWithUs := int(math.Round(time.Now().Sub(acc.CreatedAt).Hours() / 24.0))
-		suffix := "дней"
+		var timeWithUs = int(math.Round(time.Now().Sub(acc.CreatedAt).Hours() / 24.0))
+		var suffix = "дней"
 
 		if timeWithUs == 1.0 {
 			suffix = "день"
 		} else if timeWithUs >= 2 && timeWithUs <= 4 {
 			suffix = "дня"
 		}
-		contentToAdd := map[string]interface{}{
+
+		var contentToAdd = map[string]interface{}{
 			"ProfileUsername":  acc.Username,
 			"ProfileCreatedAt": fmt.Sprintf("%d %s", timeWithUs, suffix),
 			"ProfileMessages":  []internal.ProfileMessage{},
 		}
 
-		sex := "Не указан"
+		var sex = "Не указан"
 
 		if acc.Sex.String == "m" {
 			sex = "Мужской"
@@ -64,21 +65,7 @@ func Profiles() {
 			contentToAdd["ProfileDescription"] = acc.Description.String
 		}
 
-		tx, err := db.Postgres.Begin(ctx)
-
-		if tx != nil {
-			defer tx.Commit(ctx)
-		}
-
-		if err != nil {
-			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to start transaction: %v", err))
-
-			templates.ContentAdd(r, templates.Profile, contentToAdd)
-
-			return
-		}
-
-		rowsMessages, errMessages := tx.Query(ctx, ` 
+		var rowsMessages, errMessages = db.Postgres.Query(ctx, ` 
 		select m.topic_id, t.topic_name, m.message, m.create_time
 		from (
 			select topic_id, message, create_time
@@ -93,6 +80,9 @@ func Profiles() {
 
 		if errMessages != nil {
 			system.ErrLog("initialize_functions.Profiles", fmt.Errorf("Failed to fetch messages: %v", errMessages))
+			contentToAdd["ProfileNoMessages"] = true
+			templates.ContentAdd(r, templates.Profile, contentToAdd)
+			return
 		}
 
 		for rowsMessages.Next() {

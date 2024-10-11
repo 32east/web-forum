@@ -8,7 +8,7 @@ import (
 )
 
 func Prepare(additionalFiles ...string) *template.Template {
-	parseFiles, err := template.ParseFiles(additionalFiles...)
+	var parseFiles, err = template.ParseFiles(additionalFiles...)
 
 	if err != nil {
 		panic(err)
@@ -18,7 +18,7 @@ func Prepare(additionalFiles ...string) *template.Template {
 }
 
 func ContentAdd(reader *http.Request, tmpl *template.Template, content any) {
-	InfoToSend := reader.Context().Value("InfoToSend").(map[string]interface{})
+	var InfoToSend = reader.Context().Value("InfoToSend").(map[string]interface{})
 
 	if reflect.ValueOf(content).Kind() == reflect.Map {
 		for k, v := range InfoToSend {
@@ -26,7 +26,7 @@ func ContentAdd(reader *http.Request, tmpl *template.Template, content any) {
 		}
 	}
 
-	newBytesBuffer := new(bytes.Buffer)
+	var newBytesBuffer = new(bytes.Buffer)
 	tmpl.Execute(newBytesBuffer, content)
 
 	InfoToSend["Content"] = template.HTML(newBytesBuffer.String())
@@ -37,8 +37,6 @@ var LoginPage = Prepare("frontend/forum/login.html")
 var RegisterPage = Prepare("frontend/forum/register.html")
 var Forum = Prepare("frontend/forum/forum.html")
 var Topics = Prepare("frontend/forum/topics.html", "frontend/common/topic.html")
-var FAQ = Prepare("frontend/forum/faq.html")
-var Users = Prepare("frontend/forum/users.html")
 
 var TopicPage = Prepare("frontend/forum/topic.html", "frontend/common/message.html")
 

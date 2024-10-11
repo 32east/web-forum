@@ -9,11 +9,11 @@ import (
 var ctx = context.Background()
 
 func Base(stdRequest *http.Request) (map[string]interface{}, *account.Account) {
-	infoToSend := make(map[string]interface{})
-	cookie, err := stdRequest.Cookie("access_token")
+	var infoToSend = make(map[string]interface{})
+	var cookie, err = stdRequest.Cookie("access_token")
 
 	infoToSend["Authorized"] = false
-	accountData := &account.Account{}
+	var accountData = &account.Account{}
 
 	if err != nil {
 		return infoToSend, accountData

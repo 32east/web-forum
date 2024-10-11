@@ -14,7 +14,7 @@ func AdminPage(uri string, title string, newFunc func(*http.Request)) {
 			return
 		}
 
-		infoToSend, accountData := handlers.Base(reader)
+		var infoToSend, accountData = handlers.Base(reader)
 
 		if !(*accountData).IsAdmin {
 			http.NotFound(writer, reader)
@@ -23,7 +23,7 @@ func AdminPage(uri string, title string, newFunc func(*http.Request)) {
 
 		infoToSend["Title"] = title
 
-		ctx := reader.Context()
+		var ctx = reader.Context()
 		ctx = context.WithValue(ctx, "InfoToSend", infoToSend)
 		ctx = context.WithValue(ctx, "AccountData", *accountData)
 		ctx = context.WithValue(ctx, "Writer", writer)

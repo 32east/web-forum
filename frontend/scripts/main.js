@@ -486,7 +486,6 @@ window.onload = function() {
         });
     }
 
-
 // Обработчик для кнопки отправки сообщения
     if (sendMessageButton) {
         sendMessageButton.addEventListener('click', (e) => {
@@ -510,6 +509,19 @@ window.onload = function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        // Проверяем, есть ли номер страницы в ответе
+                        if (data.page) {
+                            // Создаем новый URL
+                            const currentUrl = new URL(window.location.href);
+                            const params = new URLSearchParams(currentUrl.search);
+
+                            // Устанавливаем или обновляем параметр page
+                            params.set('page', data.page);
+                            currentUrl.search = params.toString();
+
+                            // Обновляем URL без перезагрузки страницы
+                            history.pushState({ page: data.page }, '', currentUrl);
+                        }
                         // Перезагружаем страницу, если сообщение успешно отправлено
                         location.reload();
                     } else {
@@ -528,6 +540,19 @@ window.onload = function() {
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.success) {
+                                        // Проверяем, есть ли номер страницы в ответе
+                                        if (data.page) {
+                                            // Создаем новый URL
+                                            const currentUrl = new URL(window.location.href);
+                                            const params = new URLSearchParams(currentUrl.search);
+
+                                            // Устанавливаем или обновляем параметр page
+                                            params.set('page', data.page);
+                                            currentUrl.search = params.toString();
+
+                                            // Обновляем URL без перезагрузки страницы
+                                            history.pushState({ page: data.page }, '', currentUrl);
+                                        }
                                         location.reload();
                                     }
                                 })
@@ -538,6 +563,7 @@ window.onload = function() {
                 .catch(error => console.error('Ошибка:', error));
         });
     }
+
 
     // Get all elements with class "save-category-settings"
     const saveButtons = document.querySelectorAll('.save-category-settings');

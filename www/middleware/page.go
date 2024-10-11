@@ -14,7 +14,7 @@ func Page(uri string, title string, newFunc func(*http.Request)) {
 			return
 		}
 
-		infoToSend, accountData := handlers.Base(reader)
+		var infoToSend, accountData = handlers.Base(reader)
 		infoToSend["Title"] = title
 
 		ctx := reader.Context()

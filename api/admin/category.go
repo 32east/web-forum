@@ -12,8 +12,8 @@ import (
 var ctx = context.Background()
 
 func HandleCategoryCreate(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
-	objCategory := internal.Category{}
-	newDecoder := json.NewDecoder(r.Body).Decode(&objCategory)
+	var objCategory = internal.Category{}
+	var newDecoder = json.NewDecoder(r.Body).Decode(&objCategory)
 
 	switch {
 	case newDecoder != nil:
@@ -28,7 +28,7 @@ func HandleCategoryCreate(w http.ResponseWriter, r *http.Request, answer map[str
 	default:
 	}
 
-	_, execErr := db.Postgres.Exec(ctx, `insert into categorys (name, description) values ($1, $2);`, objCategory.Name, objCategory.Description)
+	var _, execErr = db.Postgres.Exec(ctx, `insert into categorys (name, description) values ($1, $2);`, objCategory.Name, objCategory.Description)
 
 	if execErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
@@ -42,8 +42,8 @@ func HandleCategoryCreate(w http.ResponseWriter, r *http.Request, answer map[str
 }
 
 func HandleCategoryEdit(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
-	objCategory := internal.Category{}
-	newDecoder := json.NewDecoder(r.Body).Decode(&objCategory)
+	var objCategory = internal.Category{}
+	var newDecoder = json.NewDecoder(r.Body).Decode(&objCategory)
 
 	switch {
 	case newDecoder != nil:
@@ -61,7 +61,7 @@ func HandleCategoryEdit(w http.ResponseWriter, r *http.Request, answer map[strin
 	default:
 	}
 
-	_, execErr := db.Postgres.Exec(ctx, `update categorys set name = $1, description = $2 where id = $3;`, objCategory.Name, objCategory.Description, objCategory.Id)
+	var _, execErr = db.Postgres.Exec(ctx, `update categorys set name = $1, description = $2 where id = $3;`, objCategory.Name, objCategory.Description, objCategory.Id)
 
 	if execErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"

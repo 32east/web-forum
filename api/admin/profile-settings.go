@@ -8,15 +8,15 @@ import (
 )
 
 func HandleProfileSettings(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
-	id := r.FormValue("id")
-	conv, err := strconv.Atoi(id)
+	var id = r.FormValue("id")
+	var conv, err = strconv.Atoi(id)
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "invalid id"
 		return nil
 	}
 
-	accountData, errGetAccount := account.GetById(conv)
+	var accountData, errGetAccount = account.GetById(conv)
 
 	if errGetAccount != nil {
 		answer["success"], answer["reason"] = false, "invalid user"

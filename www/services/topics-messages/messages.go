@@ -11,11 +11,11 @@ import (
 
 var ctx = context.Background()
 
-func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
+func Get(topic *internal.Topic, page int) *internal.Paginator {
 	const errorFunction = "topics_messages.Get"
 
-	queryCount := fmt.Sprintf("select message_count from topics where id = %d", (*topic).Id)
-	preQuery := internal.PaginatorPreQuery{
+	var queryCount = fmt.Sprintf("select message_count from topics where id = %d", (*topic).Id)
+	var preQuery = internal.PaginatorPreQuery{
 		TableName:     "messages",
 		OutputColumns: "id, topic_id, account_id, message, create_time, update_time",
 		WhereColumn:   "topic_id",
@@ -25,6 +25,7 @@ func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 			Query: queryCount,
 		},
 	}
+	var paginatorList = internal.Paginator{}
 
 	tx, rows, paginatorList, err := paginator.Query(preQuery)
 	if tx != nil {
@@ -33,7 +34,7 @@ func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 
 	if err != nil {
 		system.ErrLog(errorFunction, err)
-		return nil, err
+		return &paginatorList
 	}
 
 	var tempUsers []int
@@ -41,8 +42,7 @@ func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 
 	for rows.Next() {
 		var msg internal.Message
-
-		scanErr := rows.Scan(&msg.Id, &msg.TopicId, &msg.CreatorId, &msg.Message, &msg.CreateTime, &msg.UpdateTime)
+		var scanErr = rows.Scan(&msg.Id, &msg.TopicId, &msg.CreatorId, &msg.Message, &msg.CreateTime, &msg.UpdateTime)
 
 		if scanErr != nil {
 			system.ErrLog(errorFunction, scanErr)
@@ -53,15 +53,15 @@ func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 		tempMessages = append(tempMessages, msg)
 	}
 
-	usersInfo := account.GetFromSlice(tempUsers, tx)
-	parentId := (*topic).ParentId
+	var usersInfo = account.GetFromSlice(tempUsers, tx)
+	var parentId = (*topic).ParentId
 
 	for i := 0; i < len(tempMessages); i++ {
-		msg := tempMessages[i]
-		acc, ok := usersInfo[msg.CreatorId]
+		var msg = tempMessages[i]
+		var acc, ok = usersInfo[msg.CreatorId]
 
 		if !ok {
-			system.ErrLog(errorFunction, fmt.Errorf("Не найден креатор сообщения в бд? > %s(ID): %s(MSG)", msg.CreatorId, msg.TopicId))
+			system.ErrLog(errorFunction, fmt.Errorf("не найден креатор сообщения в бд? > %s(ID): %s(MSG)", msg.CreatorId, msg.TopicId))
 			continue
 		}
 
@@ -89,5 +89,5 @@ func Get(topic *internal.Topic, page int) (*internal.Paginator, error) {
 		paginatorList.Objects = append(paginatorList.Objects, messageInfo)
 	}
 
-	return &paginatorList, nil
+	return &paginatorList
 }

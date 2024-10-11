@@ -17,8 +17,8 @@ func Topics() {
 	const errorFunc = "Topics"
 
 	middleware.Mult("/topics/([0-9]+)", func(w http.ResponseWriter, r *http.Request, topicId int) {
-		topic := internal.Topic{}
-		scanErr := db.Postgres.QueryRow(ctx, "select * from topics where id = $1;", topicId).Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount, &topic.ParentId)
+		var topic = internal.Topic{}
+		var scanErr = db.Postgres.QueryRow(ctx, "select * from topics where id = $1;", topicId).Scan(&topic.Id, &topic.ForumId, &topic.Name, &topic.Creator, &topic.CreateTime, &topic.UpdateTime, &topic.MessageCount, &topic.ParentId)
 
 		if scanErr != nil {
 			middleware.Push404(w, r)
@@ -26,25 +26,20 @@ func Topics() {
 		}
 
 		topic.MessageCount -= 1
-		currentPage := r.FormValue("page")
+		var currentPage = r.FormValue("page")
 
 		if currentPage == "" {
 			currentPage = "1"
 		}
 
-		page, errInt := strconv.Atoi(currentPage)
+		var page, errInt = strconv.Atoi(currentPage)
 
 		if errInt != nil {
 			page = 1
 		}
 
-		finalPaginator, err := topics_messages.Get(&topic, page)
-
-		if err != nil {
-			system.ErrLog(errorFunc, err)
-		}
-
-		getAccount, ok := account.GetById(topic.Creator)
+		var finalPaginator = topics_messages.Get(&topic, page)
+		var getAccount, ok = account.GetById(topic.Creator)
 
 		if ok != nil {
 			system.ErrLog(errorFunc, fmt.Errorf("cannot find account: %d", topic.Creator))

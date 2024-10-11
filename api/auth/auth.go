@@ -20,15 +20,14 @@ var refreshTokenTime = 3600 * 72
 var ctx = context.Background()
 
 func CheckForSpecialCharacters(str string) bool {
-	countSpecialCharacters := strings.IndexFunc(str, func(r rune) bool {
+	var countSpecialCharacters = strings.IndexFunc(str, func(r rune) bool {
 		return r < 'A' || r > 'z'
 	})
-
 	return countSpecialCharacters > 0
 }
 
 func IsLoginAndPasswordLegalForActions(loginStr string, passwordStr string) (bool, string) {
-	success, reason := true, ""
+	var success, reason = true, ""
 
 	if loginStr == "" || passwordStr == "" {
 		success, reason = false, "invalid login or password"
@@ -42,12 +41,11 @@ func IsLoginAndPasswordLegalForActions(loginStr string, passwordStr string) (boo
 }
 
 func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
-	loginStr := reader.FormValue("login")
-	passwordStr := reader.FormValue("password")
-	username := reader.FormValue("username")
-	email := reader.FormValue("email")
-
-	success, reason := IsLoginAndPasswordLegalForActions(loginStr, passwordStr)
+	var loginStr = reader.FormValue("login")
+	var passwordStr = reader.FormValue("password")
+	var username = reader.FormValue("username")
+	var email = reader.FormValue("email")
+	var success, reason = IsLoginAndPasswordLegalForActions(loginStr, passwordStr)
 
 	if !success {
 		answer["success"], answer["reason"] = false, reason
@@ -56,21 +54,19 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 
 	tx, err := db.Postgres.Begin(ctx)
 
-	if tx != nil {
-		defer func() {
-			switch answer["success"] {
-			case true:
-				tx.Commit(ctx)
-			case false:
-				tx.Rollback(ctx)
-			}
-		}()
-	}
-
 	if err != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return err
 	}
+
+	defer func() {
+		switch answer["success"] {
+		case true:
+			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
+		}
+	}()
 
 	rows, err := tx.Query(ctx, `select
 		case when login=$1 then 1 else 0 end,
@@ -83,7 +79,7 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 		return err
 	}
 
-	loginFounded, emailFounded, usernameFounded := 0, 0, 0
+	var loginFounded, emailFounded, usernameFounded = 0, 0, 0
 
 	for rows.Next() {
 		errRow := rows.Scan(&loginFounded, &emailFounded, &usernameFounded)
@@ -105,10 +101,10 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 		return nil
 	}
 
-	loginLen := internal.Utf8Length(loginStr)
-	passwordLen := internal.Utf8Length(passwordStr)
-	usernameLen := internal.Utf8Length(username)
-	emailLen := internal.Utf8Length(email)
+	var loginLen = internal.Utf8Length(loginStr)
+	var passwordLen = internal.Utf8Length(passwordStr)
+	var usernameLen = internal.Utf8Length(username)
+	var emailLen = internal.Utf8Length(email)
 
 	switch {
 	case loginLen < internal.LoginMinLength:
@@ -164,40 +160,39 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 
 // TODO: Могут насрать запросами, что по итогу выльется в DDOS.
 func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
-	loginStr := reader.FormValue("login")
-	passwordStr := reader.FormValue("password")
-
-	success, reason := IsLoginAndPasswordLegalForActions(loginStr, passwordStr)
+	var loginStr = reader.FormValue("login")
+	var passwordStr = reader.FormValue("password")
+	var success, reason = IsLoginAndPasswordLegalForActions(loginStr, passwordStr)
 
 	if !success {
 		answer["success"], answer["reason"] = false, reason
 		return nil
 	}
 
-	accountInfo, queryErr := account.GetByLogin(loginStr)
+	var accountInfo, queryErr = account.GetByLogin(loginStr)
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, "account not founded"
 		return nil
 	}
 
-	toSha256 := sha256.New()
+	var toSha256 = sha256.New()
 	toSha256.Write([]byte(passwordStr))
-	hexPassword := hex.EncodeToString(toSha256.Sum(nil))
+	var hexPassword = hex.EncodeToString(toSha256.Sum(nil))
 
 	if accountInfo.Password != hexPassword {
 		answer["success"], answer["reason"] = false, "account not founded"
 		return nil
 	}
 
-	accessToken, errAccess := jwt_token.GenerateNew(accountInfo.Id, "access")
+	var accessToken, errAccess = jwt_token.GenerateNew(accountInfo.Id, "access")
 
 	if errAccess != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return errAccess
 	}
 
-	refreshToken, errRefresh := jwt_token.GenerateNew(accountInfo.Id, "refresh")
+	var refreshToken, errRefresh = jwt_token.GenerateNew(accountInfo.Id, "refresh")
 
 	if errRefresh != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
@@ -221,69 +216,74 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 }
 
 func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
-	mapToken := map[string]string{}
-	jsonErr := json.NewDecoder(r.Body).Decode(&mapToken)
+	var mapToken = map[string]string{}
+	var jsonErr = json.NewDecoder(r.Body).Decode(&mapToken)
 
 	if jsonErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return jsonErr
 	}
 
-	refreshToken := mapToken["refresh_token"]
+	var refreshToken = mapToken["refresh_token"]
 
 	if refreshToken == "" {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return nil
 	}
 
-	tokenClaim, err := jwt_token.GetInfo(refreshToken)
+	var tokenClaim, err = jwt_token.GetInfo(refreshToken)
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return err
 	}
 
-	accountId := tokenClaim["id"]
-	accessToken, errAccess := jwt_token.GenerateNew(accountId.(int64), "access")
+	var accountId = tokenClaim["id"]
+	var _, errGetAccount = account.GetById(int(accountId.(int64)))
+
+	if errGetAccount != nil {
+		answer["success"], answer["reason"] = false, "internal server error"
+		return nil
+	}
+
+	var accessToken, errAccess = jwt_token.GenerateNew(accountId.(int64), "access")
 
 	if errAccess != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return errAccess
 	}
 
-	newRefreshToken, errRefresh := jwt_token.GenerateNew(accountId.(int64), "refresh")
+	var newRefreshToken, errRefresh = jwt_token.GenerateNew(accountId.(int64), "refresh")
 
 	if errRefresh != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return errRefresh
 	}
 
-	tx, err := db.Postgres.Begin(ctx)
+	var tx, txErr = db.Postgres.Begin(ctx)
 
-	if tx != nil {
-		defer func() {
-			switch answer["success"] {
-			case true:
-				tx.Commit(ctx)
-			case false:
-				tx.Rollback(ctx)
-			}
-		}()
-	}
-
-	if err != nil {
+	if txErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
-		return err
+		return txErr
 	}
 
-	_, execErr := tx.Exec(ctx, "delete from tokens where refresh_token = $1;", refreshToken)
+	defer func() {
+		switch answer["success"] {
+		case true:
+			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
+		}
+	}()
+
+	var _, execErr = tx.Exec(ctx, "delete from tokens where refresh_token = $1;", refreshToken)
 
 	if execErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return execErr
 	}
 
-	fmtQuery := fmt.Sprintf("insert into tokens (account_id, refresh_token, expiresat) values ($1, $2, now() + interval '%d second');", refreshTokenTime)
+	var fmtQuery = fmt.Sprintf("insert into tokens (account_id, refresh_token, expiresat) values ($1, $2, now() + interval '%d second');", refreshTokenTime)
 	_, execErr = tx.Exec(ctx, fmtQuery, accountId, newRefreshToken)
 
 	if execErr != nil {

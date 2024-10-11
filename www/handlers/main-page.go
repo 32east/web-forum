@@ -28,7 +28,7 @@ type LastMessage struct {
 func MainPage(stdRequest *http.Request) {
 	const errorFunction = "handlers.MainPage"
 
-	categorys, err := category.GetAll()
+	var categorys, err = category.GetAll()
 
 	if err != nil {
 		log.Fatal(fmt.Errorf("%s: %w", errorFunction, err))
@@ -66,8 +66,7 @@ select
 	} else {
 		for lastMessages.Next() {
 			var createTime time.Time
-
-			lastMessage := LastMessage{}
+			var lastMessage = LastMessage{}
 
 			err = lastMessages.Scan(&lastMessage.TopicId, &lastMessage.TopicName, &lastMessage.TopicMessageCount, &lastMessage.TopicCreatedBy, &lastMessage.CreatorId, &createTime, &lastMessage.MessageCreatorAvatar, &lastMessage.MessageBy)
 

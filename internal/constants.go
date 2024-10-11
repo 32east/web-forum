@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-const SiteName = "Форумчанский"
-
 const LoginMinLength = 4
 const LoginMaxLength = 32
 

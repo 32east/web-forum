@@ -42,18 +42,16 @@ func ConnectDatabase() *pgxpool.Pool {
 	newTicker := time.NewTicker(time.Second * 1)
 
 	for {
-		select {
-		case <-newTicker.C:
-			Postgres = TryToConnect()
+		<-newTicker.C
+		Postgres = TryToConnect()
 
-			if Postgres != nil {
-				return Postgres
-			} else {
-				failsCount += 1
+		if Postgres != nil {
+			return Postgres
+		} else {
+			failsCount += 1
 
-				if failsCount >= 5 {
-					panic("failed to connect to database after 5 attempts")
-				}
+			if failsCount >= 5 {
+				panic("failed to connect to database after 5 attempts")
 			}
 		}
 	}

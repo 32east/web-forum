@@ -9,34 +9,32 @@ import (
 )
 
 func HandleMessageDelete(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
-	receiveId := internal.MessageDelete{}
-	newDecoder := json.NewDecoder(r.Body).Decode(&receiveId)
+	var receiveId = internal.MessageDelete{}
+	var newDecoder = json.NewDecoder(r.Body).Decode(&receiveId)
 
 	if newDecoder != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return newDecoder
 	}
 
-	tx, err := db.Postgres.Begin(ctx)
-
-	if tx != nil {
-		defer func() {
-			switch answer["success"] {
-			case true:
-				tx.Commit(ctx)
-			case false:
-				tx.Rollback(ctx)
-			}
-		}()
-	}
+	var tx, err = db.Postgres.Begin(ctx)
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return err
 	}
 
+	defer func() {
+		switch answer["success"] {
+		case true:
+			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
+		}
+	}()
+
 	var isParentMessage bool
-	queryCheck := tx.QueryRow(ctx, "select true from topics where parent_id = $1;", receiveId.Id)
+	var queryCheck = tx.QueryRow(ctx, "select true from topics where parent_id = $1;", receiveId.Id)
 	queryCheck.Scan(&isParentMessage)
 
 	if isParentMessage {
@@ -44,7 +42,7 @@ func HandleMessageDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 		return nil
 	}
 
-	_, execErr := tx.Exec(ctx, "delete from messages where id=$1", receiveId.Id)
+	var _, execErr = tx.Exec(ctx, "delete from messages where id=$1", receiveId.Id)
 
 	if execErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"

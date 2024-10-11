@@ -22,7 +22,7 @@ func clearAccountsCache() {
 }
 
 func clearRefreshTokens() {
-	_, err := db.Postgres.Exec(ctx, "delete from tokens where expiresat < now();")
+	var _, err = db.Postgres.Exec(ctx, "delete from tokens where expiresat < now();")
 
 	if err != nil {
 		system.ErrLog("timer.clearRefreshTokens", err)
@@ -30,8 +30,8 @@ func clearRefreshTokens() {
 }
 
 func Start() {
-	timer := time.NewTicker(time.Second * 10)
-	timerHour := time.NewTicker(time.Hour)
+	var timer = time.NewTicker(time.Second * 10)
+	var timerHour = time.NewTicker(time.Hour)
 
 	for {
 		select {

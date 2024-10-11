@@ -16,45 +16,44 @@ import (
 var ctx = context.Background()
 
 func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
-	cookie, err := reader.Cookie("access_token")
+	var cookie, err = reader.Cookie("access_token")
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
 		return nil
 	}
 
-	accInfo, tokenErr := account.ReadFromCookie(cookie)
+	var accInfo, tokenErr = account.ReadFromCookie(cookie)
 
 	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
 		return nil
 	}
 
-	jsonData := internal.MessageCreate{}
-	jsonErr := json.NewDecoder(reader.Body).Decode(&jsonData)
+	var jsonData = internal.MessageCreate{}
+	var jsonErr = json.NewDecoder(reader.Body).Decode(&jsonData)
 
 	if jsonErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return jsonErr
 	}
 
-	topicId, message := jsonData.TopicId, jsonData.Message
+	var topicId, message = jsonData.TopicId, jsonData.Message
 
 	if strings.Trim(message, " ") == "" {
 		answer["success"], answer["reason"] = false, "message is empty"
 		return nil
 	}
 
-	scanTopicId := -1
+	var scanTopicId = -1
+	var tx, txErr = db.Postgres.Begin(ctx)
 
-	tx, err := db.Postgres.Begin(ctx)
-
-	if err != nil {
+	if txErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
-		return err
+		return txErr
 	}
 
-	errScan := tx.QueryRow(ctx, "select id from topics where id = $1;", topicId).Scan(&scanTopicId)
+	var errScan = tx.QueryRow(ctx, "select id from topics where id = $1;", topicId).Scan(&scanTopicId)
 
 	if errScan != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
@@ -62,8 +61,8 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 		return errScan
 	}
 
-	msgInsert := internal.FormatString(message)
-	accountId := accInfo.Id
+	var msgInsert = internal.FormatString(message)
+	var accountId = accInfo.Id
 
 	defer func() {
 		switch answer["success"] {
@@ -74,14 +73,14 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 		}
 	}()
 
-	_, queryErr := tx.Exec(ctx, `insert into messages(topic_id, account_id, message, create_time, update_time) values ($1, $2, $3, current_timestamp, NULL)`, topicId, accountId, msgInsert)
+	var _, queryErr = tx.Exec(ctx, `insert into messages(topic_id, account_id, message, create_time, update_time) values ($1, $2, $3, current_timestamp, NULL)`, topicId, accountId, msgInsert)
 
 	if queryErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return queryErr
 	}
 
-	messageCount := 0
+	var messageCount = 0
 	queryErr = tx.QueryRow(ctx, `update topics
 	set message_count = message_count + 1
 	where id = $1
@@ -92,7 +91,7 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 		return queryErr
 	}
 
-	pagesCount := math.Ceil(float64((messageCount)/internal.MaxPaginatorMessages)) + 1
+	var pagesCount = math.Ceil(float64((messageCount)/internal.MaxPaginatorMessages)) + 1
 
 	if pagesCount > 1 {
 		answer["page"] = int(pagesCount)
@@ -104,29 +103,29 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 }
 
 func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[string]interface{}) error {
-	cookie, err := reader.Cookie("access_token")
+	var cookie, err = reader.Cookie("access_token")
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
 		return nil
 	}
 
-	accInfo, tokenErr := account.ReadFromCookie(cookie)
+	var accInfo, tokenErr = account.ReadFromCookie(cookie)
 
 	if tokenErr != nil {
 		answer["success"], answer["reason"] = false, "not authorized"
 		return nil
 	}
 
-	topic := internal.TopicCreate{}
-	jsonErr := json.NewDecoder(reader.Body).Decode(&topic)
+	var topic = internal.TopicCreate{}
+	var jsonErr = json.NewDecoder(reader.Body).Decode(&topic)
 
 	if jsonErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return jsonErr
 	}
 
-	name, msg, categoryId, accountId := topic.Name, topic.Message, topic.CategoryId, accInfo.Id
+	var name, msg, categoryId, accountId = topic.Name, topic.Message, topic.CategoryId, accInfo.Id
 
 	if strings.Trim(name, " ") == "" {
 		answer["success"], answer["reason"] = false, "topic name is empty"
@@ -143,37 +142,33 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 		return nil
 	}
 
-	scanCategoryId := -1
-
-	tx, beginErr := db.Postgres.Begin(ctx)
-
-	if tx != nil {
-		defer func() {
-			switch answer["success"] {
-			case true:
-				tx.Commit(ctx)
-			case false:
-				tx.Rollback(ctx)
-			}
-		}()
-	}
+	var scanCategoryId = -1
+	var tx, beginErr = db.Postgres.Begin(ctx)
 
 	if beginErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return beginErr
 	}
 
-	row := tx.QueryRow(ctx, "select id from categorys where id = $1;", categoryId).Scan(&scanCategoryId)
+	defer func() {
+		switch answer["success"] {
+		case true:
+			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
+		}
+	}()
+
+	var row = tx.QueryRow(ctx, "select id from categorys where id = $1;", categoryId).Scan(&scanCategoryId)
 
 	if row != nil {
 		answer["success"], answer["reason"] = false, "category not founded"
 		return nil
 	}
 
-	queryErr := tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time, parent_id) values ($1, $2, $3, now(), NULL) returning id;", categoryId, name, accountId)
-
-	lastInsertId := -1
-	errScan := queryErr.Scan(&lastInsertId)
+	var queryErr = tx.QueryRow(ctx, "insert into topics (forum_id, topic_name, created_by, create_time, parent_id) values ($1, $2, $3, now(), NULL) returning id;", categoryId, name, accountId)
+	var lastInsertId = -1
+	var errScan = queryErr.Scan(&lastInsertId)
 
 	if errScan != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
@@ -181,7 +176,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	}
 
 	msg = internal.FormatString(msg)
-	msgIdQuery := tx.QueryRow(ctx, "insert into messages (topic_id, account_id, message, create_time) values ($1, $2, $3, now()) returning id;", lastInsertId, accountId, msg)
+	var msgIdQuery = tx.QueryRow(ctx, "insert into messages (topic_id, account_id, message, create_time) values ($1, $2, $3, now()) returning id;", lastInsertId, accountId, msg)
 
 	var msgId int
 	msgIdQuery.Scan(&msgId)

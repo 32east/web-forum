@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const SeparateChar = ">!;"
+const SeparateChar = "†"
 
 func (data Account) Serialize() string {
 	var avatar string
@@ -36,7 +36,7 @@ func (data Account) Serialize() string {
 		updatedAt = data.UpdatedAt.Time.Format(time.RFC3339)
 	}
 
-	isAdmin := 0
+	var isAdmin = 0
 
 	if data.IsAdmin {
 		isAdmin = 1
@@ -68,12 +68,11 @@ func (data Account) Serialize() string {
 }
 
 func Deserialize(data string) (someInformation Account, err error) {
-	toArray := strings.Split(data, SeparateChar)
+	var toArray = strings.Split(data, SeparateChar)
+	var conv, convErr = strconv.Atoi(toArray[0])
 
-	conv, err := strconv.Atoi(toArray[0])
-
-	if err != nil {
-		return someInformation, fmt.Errorf("%s: %w", "Deserialize", err)
+	if convErr != nil {
+		return someInformation, fmt.Errorf("%s: %w", "Deserialize", convErr)
 	}
 
 	var avatar sql.NullString
@@ -92,27 +91,27 @@ func Deserialize(data string) (someInformation Account, err error) {
 		signText = sql.NullString{String: toArray[8], Valid: true}
 	}
 
-	createdAtFormat, errT := time.Parse("2006-01-02 15:04:05", toArray[9])
+	var createdAtFormat, errT = time.Parse("2006-01-02 15:04:05", toArray[9])
 
 	if errT != nil {
 		log.Print("Deserailize account:", errT)
 		createdAtFormat = time.Time{}
 	}
 
-	updatedAtFormat := sql.NullTime{}
+	var updatedAtFormat = sql.NullTime{}
 
 	if toArray[10] != "" {
 		updatedAtFormat.Time, _ = time.Parse(toArray[10], time.RFC3339)
 		updatedAtFormat.Valid = true
 	}
 
-	isAdmin := false
+	var isAdmin = false
 
 	if toArray[3] == "1" {
 		isAdmin = true
 	}
 
-	sex := sql.NullString{}
+	var sex = sql.NullString{}
 
 	if toArray[4] != "" {
 		sex.String = toArray[4]

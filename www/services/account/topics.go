@@ -17,10 +17,9 @@ var ctx = context.Background()
 
 func GetFromSlice(tempUsers []int, tx pgx.Tx) map[int]UserTopic {
 	const errorFunction = "topics.GetFromSlice"
-	rowsUsers, errUsers := tx.Query(ctx, `select id, username, avatar, sign_text
+	var rowsUsers, errUsers = tx.Query(ctx, `select id, username, avatar, sign_text
 			from users
 			where id = any($1);`, tempUsers)
-	defer rowsUsers.Close()
 
 	var usersInfo = map[int]UserTopic{}
 
@@ -29,11 +28,11 @@ func GetFromSlice(tempUsers []int, tx pgx.Tx) map[int]UserTopic {
 		return usersInfo
 	}
 
+	defer rowsUsers.Close()
 	for rowsUsers.Next() {
 		var id int
 		var user UserTopic
-
-		scanErr := rowsUsers.Scan(&id, &user.Username, &user.Avatar, &user.SignText)
+		var scanErr = rowsUsers.Scan(&id, &user.Username, &user.Avatar, &user.SignText)
 
 		if scanErr != nil {
 			system.ErrLog(errorFunction, scanErr)

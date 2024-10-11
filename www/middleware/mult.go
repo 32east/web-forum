@@ -18,7 +18,7 @@ func Push404(writer http.ResponseWriter, reader *http.Request) {
 }
 
 func Mult(uri string, newFunc func(writer http.ResponseWriter, r *http.Request, id int)) {
-	regExp, err := regexp.Compile(uri)
+	var regExp, err = regexp.Compile(uri)
 
 	if err != nil {
 		panic(err)
@@ -28,21 +28,21 @@ func Mult(uri string, newFunc func(writer http.ResponseWriter, r *http.Request, 
 	http.HandleFunc("/"+endUrl[1]+"/", func(writer http.ResponseWriter, reader *http.Request) {
 		infoToSend, accountData := handlers.Base(reader)
 
-		ctx := reader.Context()
+		var ctx = reader.Context()
 		ctx = context.WithValue(ctx, "InfoToSend", infoToSend)
 		ctx = context.WithValue(ctx, "AccountData", accountData)
 
 		reader = reader.WithContext(ctx)
 
-		str := regExp.FindString(reader.URL.Path)
-		splitStr := strings.Split(str, "/")
+		var str = regExp.FindString(reader.URL.Path)
+		var splitStr = strings.Split(str, "/")
 
 		if len(splitStr) <= 2 {
 			http.NotFound(writer, reader)
 			return
 		}
 
-		id, convErr := strconv.Atoi(splitStr[2])
+		var id, convErr = strconv.Atoi(splitStr[2])
 
 		if convErr != nil {
 			http.NotFound(writer, reader)

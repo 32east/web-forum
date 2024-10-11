@@ -13,12 +13,11 @@ func AdminAPI(uri string, method string, newFunc func(http.ResponseWriter, *http
 	http.HandleFunc(uri, func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request:", r.Method, r.URL.Path)
 
-		var errFunction = fmt.Sprintf("%s %s", r.Method, r.URL.Path)
-
 		w.Header().Add("content-type", "application/json")
 
-		newJSONEncoder := json.NewEncoder(w)
-		answer := make(map[string]interface{})
+		var errFunction = fmt.Sprintf("%s %s", r.Method, r.URL.Path)
+		var newJSONEncoder = json.NewEncoder(w)
+		var answer = make(map[string]interface{})
 		defer newJSONEncoder.Encode(answer)
 
 		if r.Method != method {
@@ -26,14 +25,14 @@ func AdminAPI(uri string, method string, newFunc func(http.ResponseWriter, *http
 			return
 		}
 
-		cookie, err := r.Cookie("access_token")
+		var cookie, err = r.Cookie("access_token")
 
 		if err != nil {
 			answer["success"], answer["reason"] = false, "not authorized"
 			return
 		}
 
-		accountData, errGetAccount := account.ReadFromCookie(cookie)
+		var accountData, errGetAccount = account.ReadFromCookie(cookie)
 
 		if errGetAccount != nil {
 			answer["success"], answer["reason"] = false, "not authorized"

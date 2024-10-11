@@ -62,15 +62,15 @@ func countMinus(object *objectToRemove) error {
 }
 
 func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[string]interface{}) error {
-	id := r.FormValue("id")
-	conv, err := strconv.Atoi(id)
+	var id = r.FormValue("id")
+	var conv, err = strconv.Atoi(id)
 
 	if err != nil {
 		answer["success"], answer["reason"] = false, "invalid id"
 		return nil
 	}
 
-	accountData, errGetAccount := account.GetById(conv)
+	var accountData, errGetAccount = account.GetById(conv)
 
 	if errGetAccount != nil {
 		answer["success"], answer["reason"] = false, "invalid user"
@@ -78,18 +78,20 @@ func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 	}
 
 	var tx, txErr = db.Postgres.Begin(ctx)
-	defer func() {
-		if txErr != nil {
-			tx.Rollback(ctx)
-		} else {
-			tx.Commit(ctx)
-		}
-	}()
 
 	if txErr != nil {
 		answer["success"], answer["reason"] = false, "internal server error"
 		return txErr
 	}
+
+	defer func() {
+		switch answer["success"] {
+		case true:
+			tx.Commit(ctx)
+		case false:
+			tx.Rollback(ctx)
+		}
+	}()
 
 	var rmMessages = &objectToRemove{
 		AccountColumn: "account_id",

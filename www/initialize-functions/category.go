@@ -11,20 +11,19 @@ import (
 
 func Categorys() {
 	middleware.Mult("/category/([0-9]+)", func(w http.ResponseWriter, r *http.Request, forumId int) {
-		output := category.GetInfo(forumId)
-
-		currentPage := r.FormValue("page")
+		var output = category.GetInfo(forumId)
+		var currentPage = r.FormValue("page")
 
 		if currentPage == "" {
 			currentPage = "1"
 		}
 
-		currentPageInt, errInt := strconv.Atoi(currentPage)
+		var currentPageInt, errInt = strconv.Atoi(currentPage)
 
 		if errInt != nil {
 			currentPageInt = 0
 		}
-		finalPaginator, _ := topics.Get(forumId, currentPageInt)
+		var finalPaginator = topics.Get(forumId, currentPageInt)
 
 		contentToSend := map[string]interface{}{
 			"Id":                   forumId,

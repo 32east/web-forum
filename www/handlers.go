@@ -22,15 +22,16 @@ import (
 
 var ctx = context.Background()
 
+// RegisterStaticFiles не используется.
 func RegisterStaticFiles(path string, urlPath string) {
 	const errorFunction = "RegisterStaticFiles"
-	file, err := os.Open(path)
+	var file, err = os.Open(path)
 
 	if err != nil {
 		system.FatalLog(errorFunction, err)
 	}
 
-	fileServer, errDirRead := file.Readdir(-1)
+	var fileServer, errDirRead = file.Readdir(-1)
 
 	if errDirRead != nil {
 		system.FatalLog(errorFunction, errDirRead)
@@ -52,14 +53,11 @@ func RegisterURLs() {
 	//RegisterStaticFiles("frontend/template/imgs", "images")
 
 	for _, val := range []string{"imgs", "styles", "scripts"} {
-		fileServer := http.FileServer(http.Dir(fmt.Sprintf("frontend/%s", val)))
+		var fileServer = http.FileServer(http.Dir(fmt.Sprintf("frontend/%s", val)))
 		http.Handle(fmt.Sprintf("/%s/", val), http.StripPrefix("/"+val, fileServer))
 	}
 
 	middleware.Page("/", "Главная страница", handlers.MainPage)
-
-	middleware.Page("/faq", "FAQ", handlers.FAQPage)
-	middleware.Page("/users", "Юзеры", handlers.UsersPage)
 	middleware.Page("/login", "Авторизация", handlers.LoginPage)
 	middleware.Page("/register", "Регистрация", handlers.HandleRegisterPage)
 	middleware.Page("/topic/create", "Создание нового топика", handlers.TopicCreate)

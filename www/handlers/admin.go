@@ -36,12 +36,12 @@ type AdmAccount struct {
 var lenCount = len("count:")
 
 func redisGet(chanRdb chan chanCount, key string) {
-	conv := 0
-	err := rdb.RedisDB.Get(ctx, key).Scan(&conv)
+	var conv = 0
+	var err = rdb.RedisDB.Get(ctx, key).Scan(&conv)
 	key = key[lenCount:]
 
 	if err != nil {
-		fmtQuery := fmt.Sprintf("select count(*) from %s;", key)
+		var fmtQuery = fmt.Sprintf("select count(*) from %s;", key)
 		db.Postgres.QueryRow(ctx, fmtQuery).Scan(&conv)
 	}
 
@@ -56,8 +56,8 @@ func addToMap(rows *pgx.Rows, sendInfo *[]AdmAccount) {
 		var createdAt time.Time
 		var updatedAt sql.NullTime
 
-		account := AdmAccount{}
-		scanErr := (*rows).Scan(&account.Id, &account.Username, &account.Email, &account.IsAdmin, &sex, &avatar, &description, &signText, &createdAt, &updatedAt)
+		var account = AdmAccount{}
+		var scanErr = (*rows).Scan(&account.Id, &account.Username, &account.Email, &account.IsAdmin, &sex, &avatar, &description, &signText, &createdAt, &updatedAt)
 
 		if scanErr != nil {
 			system.ErrLog("admin.addToMap", scanErr)
@@ -113,7 +113,7 @@ func AdminMainPage(stdRequest *http.Request) {
 		go redisGet(chanRdb, "count:"+val)
 	}
 
-	count := 3
+	var count = 3
 
 	for {
 		val := <-chanRdb
@@ -126,15 +126,15 @@ func AdminMainPage(stdRequest *http.Request) {
 	}
 
 	var users []AdmAccount
-	rowsUser, err := tx.Query(ctx, `select id, username, email, is_admin, sex, avatar, description, sign_text, created_at, updated_at from users as u order by id desc limit 10;`)
+	var rowsUser, rowsUserErr = tx.Query(ctx, `select id, username, email, is_admin, sex, avatar, description, sign_text, created_at, updated_at from users as u order by id desc limit 10;`)
 
-	if err != nil {
-		system.ErrLog(errorFunction, err)
+	if rowsUserErr != nil {
+		system.ErrLog(errorFunction, rowsUserErr)
 	} else {
 		addToMap(&rowsUser, &users)
 	}
 
-	contentToAdd := map[string]interface{}{
+	var contentToAdd = map[string]interface{}{
 		"TopicsCount":         countsInfo["topics"],
 		"MessagesCount":       countsInfo["messages"],
 		"UsersCount":          countsInfo["users"],
@@ -147,7 +147,7 @@ func AdminMainPage(stdRequest *http.Request) {
 func AdminCategoriesPage(stdRequest *http.Request) {
 	const errorFunction = "AdminCategoriesPage"
 
-	rows, err := db.Postgres.Query(ctx, `select * from categorys order by id;`)
+	var rows, err = db.Postgres.Query(ctx, `select * from categorys order by id;`)
 
 	if err != nil {
 		system.ErrLog(errorFunction, err)
@@ -156,8 +156,8 @@ func AdminCategoriesPage(stdRequest *http.Request) {
 	var categories []internal.Category
 
 	for rows.Next() {
-		category := internal.Category{}
-		scanErr := rows.Scan(&category.Id, &category.Name, &category.Description, &category.TopicsCount)
+		var category = internal.Category{}
+		var scanErr = rows.Scan(&category.Id, &category.Name, &category.Description, &category.TopicsCount)
 
 		if scanErr != nil {
 			system.ErrLog(errorFunction, scanErr)
@@ -173,11 +173,11 @@ func AdminCategoriesPage(stdRequest *http.Request) {
 func AdminUsersPage(r *http.Request) {
 	const errorFunction = "AdminUsersPage"
 
-	page := 1
-	pageStr := r.FormValue("page")
+	var page = 1
+	var pageStr = r.FormValue("page")
 
 	if pageStr != "" {
-		pageNum, err := strconv.Atoi(pageStr)
+		var pageNum, err = strconv.Atoi(pageStr)
 
 		if err != nil {
 			system.ErrLog(errorFunction, err)
@@ -186,7 +186,7 @@ func AdminUsersPage(r *http.Request) {
 		page = pageNum
 	}
 
-	search := r.FormValue("search")
+	var search = r.FormValue("search")
 
 	preQuery := internal.PaginatorPreQuery{
 		TableName:     "users",
@@ -203,7 +203,7 @@ func AdminUsersPage(r *http.Request) {
 		preQuery.WhereOperator = "like"
 		preQuery.WhereValue = "%" + search + "%"
 	} else {
-		usersCount, usersCountErr := rdb.RedisDB.Get(ctx, "count:users").Result()
+		var usersCount, usersCountErr = rdb.RedisDB.Get(ctx, "count:users").Result()
 
 		if usersCountErr != nil {
 			system.ErrLog(errorFunction, usersCountErr)
@@ -211,7 +211,7 @@ func AdminUsersPage(r *http.Request) {
 			usersCount = "0"
 		}
 
-		conv, err := strconv.Atoi(usersCount)
+		var conv, err = strconv.Atoi(usersCount)
 
 		if err != nil {
 			system.ErrLog(errorFunction, err)
@@ -221,7 +221,7 @@ func AdminUsersPage(r *http.Request) {
 		preQuery.QueryCount.PreparedValue = conv
 	}
 
-	tx, rows, _, err := paginator.Query(preQuery)
+	var tx, rows, _, err = paginator.Query(preQuery)
 
 	if tx != nil {
 		defer tx.Commit(ctx)

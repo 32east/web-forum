@@ -13,11 +13,12 @@ import (
 
 var ctx = context.Background()
 
-func Get(forumId int, page int) (*internal.Paginator, error) {
+func Get(forumId int, page int) *internal.Paginator {
 	const errorFunction = "topics.Get"
 
 	var preparedValue int
 	var sqlCount string
+	var topics = internal.Paginator{}
 
 	if forumId == -1 {
 		usersCount, usersCountErr := rdb.RedisDB.Get(ctx, "count:topics").Result()
@@ -59,7 +60,7 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 	}
 
 	if err != nil {
-		return nil, system.ErrLog(errorFunction, err)
+		return &topics
 	}
 
 	var tempUsers []int
@@ -81,18 +82,17 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 		tempTopics = append(tempTopics, topic)
 	}
 
-	usersInfo := account.GetFromSlice(tempUsers, tx)
+	var usersInfo = account.GetFromSlice(tempUsers, tx)
 
 	for i := 0; i < len(tempTopics); i++ {
-		topic := tempTopics[i]
-
-		updateTime := ""
+		var topic = tempTopics[i]
+		var updateTime = ""
 
 		if topic.UpdateTime.Valid {
 			updateTime = topic.UpdateTime.Time.Format("2006-01-02 15:04:05")
 		}
 
-		creatorAccount, ok := usersInfo[topic.Creator]
+		var creatorAccount, ok = usersInfo[topic.Creator]
 
 		if !ok {
 			system.ErrLog("topics.Get", fmt.Errorf("Не найден креатор топика в БД?"))
@@ -118,5 +118,5 @@ func Get(forumId int, page int) (*internal.Paginator, error) {
 		topics.Objects = append(topics.Objects, aboutTopic)
 	}
 
-	return &topics, nil
+	return &topics
 }

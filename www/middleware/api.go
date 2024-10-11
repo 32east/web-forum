@@ -12,13 +12,11 @@ func API(uri string, newFunc func(http.ResponseWriter, *http.Request, map[string
 	http.HandleFunc(uri, func(writer http.ResponseWriter, reader *http.Request) {
 		log.Println("Request:", reader.Method, reader.URL.Path)
 
+		writer.Header().Add("content-type", "application/json")
+
 		var errFunction = fmt.Sprintf("%s %s", reader.Method, reader.URL.Path)
-
-		header := writer.Header()
-		header.Add("content-type", "application/json")
-
-		newJSONEncoder := json.NewEncoder(writer)
-		answer := make(map[string]interface{})
+		var newJSONEncoder = json.NewEncoder(writer)
+		var answer = make(map[string]interface{})
 		defer newJSONEncoder.Encode(answer)
 
 		if reader.Method != "POST" {

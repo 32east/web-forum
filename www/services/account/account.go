@@ -38,19 +38,19 @@ var rwMutex = sync.RWMutex{}
 
 func ReadFromCookie(cookie *http.Cookie) (*Account, error) {
 	var defaultAccount = Account{}
-	tokenInfo, tokenErr := jwt_token.GetInfo(cookie.Value)
+	var tokenInfo, tokenErr = jwt_token.GetInfo(cookie.Value)
 
 	if tokenErr != nil {
 		return &defaultAccount, tokenErr
 	}
 
-	id, ok := tokenInfo["id"].(int64)
+	var id, ok = tokenInfo["id"].(int64)
 
 	if !ok {
 		return &defaultAccount, fmt.Errorf("id not int")
 	}
 
-	accInfo, errGetAccount := GetById(int(id))
+	var accInfo, errGetAccount = GetById(int(id))
 
 	if errGetAccount != nil {
 		return &defaultAccount, errGetAccount
@@ -60,16 +60,17 @@ func ReadFromCookie(cookie *http.Cookie) (*Account, error) {
 }
 
 func GetById(id int) (*Account, error) {
-	veryFastCache, ok := FastCache[id]
+	// Нужен ли FastCache?
+	var veryFastCache, ok = FastCache[id]
 
 	if ok {
 		return veryFastCache.Account, nil
 	}
 
-	result, err := rdb.RedisDB.Get(ctx, fmt.Sprintf("aID:%d", id)).Result()
+	var result, err = rdb.RedisDB.Get(ctx, fmt.Sprintf("aID:%d", id)).Result()
 
 	if err == nil {
-		outputAccount, errDeserialize := Deserialize(result)
+		var outputAccount, errDeserialize = Deserialize(result)
 
 		if errDeserialize != nil {
 			return nil, errDeserialize
@@ -85,14 +86,14 @@ func GetById(id int) (*Account, error) {
 		return &outputAccount, nil
 	}
 
-	accountInfo := &Account{}
-	row := db.Postgres.QueryRow(ctx, "SELECT * FROM users WHERE id = $1;", id)
+	var accountInfo = &Account{}
+	var row = db.Postgres.QueryRow(ctx, "SELECT * FROM users WHERE id = $1;", id)
 
 	if row == nil {
 		return nil, fmt.Errorf("Account not found")
 	}
 
-	queryErr := row.Scan(
+	var queryErr = row.Scan(
 		&accountInfo.Id,
 		&accountInfo.Login,
 		&accountInfo.Password,
@@ -119,14 +120,14 @@ func GetById(id int) (*Account, error) {
 // GetByLogin
 // Использовать только по крайней необходимости.
 func GetByLogin(login string) (*Account, error) {
-	accountInfo := &Account{}
-	row := db.Postgres.QueryRow(ctx, "SELECT * FROM users WHERE login = $1;", login)
+	var accountInfo = &Account{}
+	var row = db.Postgres.QueryRow(ctx, "SELECT * FROM users WHERE login = $1;", login)
 
 	if row == nil {
 		return nil, fmt.Errorf("Account not found")
 	}
 
-	queryErr := row.Scan(
+	var queryErr = row.Scan(
 		&accountInfo.Id,
 		&accountInfo.Login,
 		&accountInfo.Password,
