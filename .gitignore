@@ -1,5 +1,6 @@
-/frontend/imgs/avatars/*
-/go_build_web_forum_main_go.exe
+/www/staticfiles/imgs/avatars/*
+/cmd/app/main
+/*.exe
 Dockerfile
-.env
+configs/.env
 
