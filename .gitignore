@@ -2,5 +2,3 @@
 /cmd/app/main
 /*.exe
 Dockerfile
-configs/.env
-
