@@ -80,7 +80,7 @@ func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 	var tx, txErr = db.Postgres.Begin(ctx)
 
 	if txErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return txErr
 	}
 
@@ -106,7 +106,7 @@ func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 	var minusMsgErr = countMinus(rmMessages)
 
 	if minusMsgErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return minusMsgErr
 	}
 
@@ -123,7 +123,7 @@ func HandleProfileDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 	var minusCatErr = countMinus(rmCategory)
 
 	if minusCatErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return minusCatErr
 	}
 

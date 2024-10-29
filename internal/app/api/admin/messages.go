@@ -13,14 +13,14 @@ func HandleMessageDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 	var newDecoder = json.NewDecoder(r.Body).Decode(&receiveId)
 
 	if newDecoder != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return newDecoder
 	}
 
 	var tx, err = db.Postgres.Begin(ctx)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return err
 	}
 
@@ -45,14 +45,14 @@ func HandleMessageDelete(w http.ResponseWriter, r *http.Request, answer map[stri
 	var _, execErr = tx.Exec(ctx, "delete from messages where id=$1", receiveId.Id)
 
 	if execErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return execErr
 	}
 
 	_, execErr = tx.Exec(ctx, "update topics set message_count = message_count - 1 where id = $1;", receiveId.Id)
 
 	if execErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return execErr
 	}
 

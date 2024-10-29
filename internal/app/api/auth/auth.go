@@ -56,7 +56,7 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 	tx, err := db.Postgres.Begin(ctx)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return err
 	}
 
@@ -76,7 +76,7 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 		from users as u1;`, loginStr, email, username)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return err
 	}
 
@@ -149,7 +149,7 @@ func HandleRegister(_ http.ResponseWriter, reader *http.Request, answer map[stri
 		hexPassword,
 		username,
 		email); execErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return execErr
 	}
 
@@ -189,14 +189,14 @@ func HandleLogin(writer http.ResponseWriter, reader *http.Request, answer map[st
 	var accessToken, errAccess = jwt_token.GenerateNew(accountInfo.Id, "access")
 
 	if errAccess != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return errAccess
 	}
 
 	var refreshToken, errRefresh = jwt_token.GenerateNew(accountInfo.Id, "refresh")
 
 	if errRefresh != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return errRefresh
 	}
 
@@ -221,21 +221,21 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 	var jsonErr = json.NewDecoder(r.Body).Decode(&mapToken)
 
 	if jsonErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return jsonErr
 	}
 
 	var refreshToken = mapToken["refresh_token"]
 
 	if refreshToken == "" {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return nil
 	}
 
 	var tokenClaim, err = jwt_token.GetInfo(refreshToken)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return err
 	}
 
@@ -243,28 +243,28 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 	var _, errGetAccount = account.GetById(int(accountId.(int64)))
 
 	if errGetAccount != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return nil
 	}
 
 	var accessToken, errAccess = jwt_token.GenerateNew(accountId.(int64), "access")
 
 	if errAccess != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return errAccess
 	}
 
 	var newRefreshToken, errRefresh = jwt_token.GenerateNew(accountId.(int64), "refresh")
 
 	if errRefresh != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return errRefresh
 	}
 
 	var tx, txErr = db.Postgres.Begin(ctx)
 
 	if txErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return txErr
 	}
 
@@ -280,7 +280,7 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 	var _, execErr = tx.Exec(ctx, "delete from tokens where refresh_token = $1;", refreshToken)
 
 	if execErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return execErr
 	}
 
@@ -288,7 +288,7 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 	_, execErr = tx.Exec(ctx, fmtQuery, accountId, newRefreshToken)
 
 	if execErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return execErr
 	}
 

@@ -35,7 +35,7 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	var jsonErr = json.NewDecoder(reader.Body).Decode(&jsonData)
 
 	if jsonErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return jsonErr
 	}
 
@@ -50,14 +50,14 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	var tx, txErr = db.Postgres.Begin(ctx)
 
 	if txErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return txErr
 	}
 
 	var errScan = tx.QueryRow(ctx, "select id from topics where id = $1;", topicId).Scan(&scanTopicId)
 
 	if errScan != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		fmt.Println(errScan)
 		return errScan
 	}
@@ -77,7 +77,7 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	var _, queryErr = tx.Exec(ctx, `insert into messages(topic_id, account_id, message, create_time, update_time) values ($1, $2, $3, current_timestamp, NULL)`, topicId, accountId, msgInsert)
 
 	if queryErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return queryErr
 	}
 
@@ -88,7 +88,7 @@ func HandleMessage(_ http.ResponseWriter, reader *http.Request, answer map[strin
 	returning message_count;`, topicId).Scan(&messageCount)
 
 	if queryErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return queryErr
 	}
 
@@ -122,7 +122,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	var jsonErr = json.NewDecoder(reader.Body).Decode(&topic)
 
 	if jsonErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return jsonErr
 	}
 
@@ -147,7 +147,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	var tx, beginErr = db.Postgres.Begin(ctx)
 
 	if beginErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return beginErr
 	}
 
@@ -172,7 +172,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	var errScan = queryErr.Scan(&lastInsertId)
 
 	if errScan != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return errScan
 	}
 
@@ -183,7 +183,7 @@ func HandleTopicCreate(_ http.ResponseWriter, reader *http.Request, answer map[s
 	msgIdQuery.Scan(&msgId)
 
 	if _, execErr := tx.Exec(ctx, "update topics set parent_id = $1 where id = $2;", msgId, lastInsertId); execErr != nil {
-		answer["success"], answer["reason"] = false, "const-funcs server error"
+		answer["success"], answer["reason"] = false, "internal server error"
 		return execErr
 	}
 

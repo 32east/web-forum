@@ -191,7 +191,7 @@ func ProcessSettings(accountData *account.Account, reader *http.Request, answer 
 		var _, uploadFileError = file.Write(buf)
 
 		if uploadFileError != nil {
-			(*answer)["success"], (*answer)["reason"] = false, "const-funcs server error"
+			(*answer)["success"], (*answer)["reason"] = false, "internal server error"
 			return uploadFileError
 		}
 
@@ -203,7 +203,7 @@ func ProcessSettings(accountData *account.Account, reader *http.Request, answer 
 	var tx, txErr = db.Postgres.Begin(ctx)
 
 	if txErr != nil {
-		(*answer)["success"], (*answer)["reason"] = false, "const-funcs server error"
+		(*answer)["success"], (*answer)["reason"] = false, "internal server error"
 		return txErr
 	}
 
@@ -222,7 +222,7 @@ func ProcessSettings(accountData *account.Account, reader *http.Request, answer 
 		var _, queryErr = tx.Exec(ctx, formatQuery, value, (*accountData).Id)
 
 		if queryErr != nil {
-			(*answer)["success"], (*answer)["reason"] = false, "const-funcs server error"
+			(*answer)["success"], (*answer)["reason"] = false, "internal server error"
 			return queryErr
 		}
 	}
