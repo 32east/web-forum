@@ -36,9 +36,9 @@
   position: relative;" class="topic-last-message-text">{{ .CreateTime }}</p>
                             </div>
                             {{ if .MessageCreatorAvatar.Valid }}
-                            <img src="/./imgs/avatars/{{ .MessageCreatorAvatar.String }}" loading="lazy" alt="{{ .MessageCreatorAvatar }} avatar" class="avatar-main-page a-avatar">
+                            <img src="/./imgs/avatars/{{ .MessageCreatorAvatar.String }}" loading="lazy" alt="{{ .MessageCreatorAvatar.String }} avatar" class="avatar-main-page a-avatar">
                             {{ else }}
-                            <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="{{ .MessageCreatorAvatar }} avatar" class="avatar-main-page a-avatar">
+                            <img src="/./imgs/default-avatar.jpg" loading="lazy" alt="avatar" class="avatar-main-page a-avatar">
                             {{ end }}
                         </div>
                     </a>
