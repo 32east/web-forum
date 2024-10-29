@@ -235,7 +235,7 @@ func HandleRefreshToken(w http.ResponseWriter, r *http.Request, answer map[strin
 	var tokenClaim, err = jwt_token.GetInfo(refreshToken)
 
 	if err != nil {
-		answer["success"], answer["reason"] = false, "internal server error"
+		answer["success"], answer["reason"] = false, err.Error()
 		return err
 	}
 
