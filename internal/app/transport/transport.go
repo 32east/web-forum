@@ -25,7 +25,7 @@ func RegisterURLs() {
 	const errorFunction = "handlers.RegisterURLs"
 
 	for _, val := range []string{"imgs", "styles", "scripts"} {
-		var fileServer = http.FileServer(http.Dir(fmt.Sprintf("www/%s", val)))
+		var fileServer = http.FileServer(http.Dir(fmt.Sprintf("www/staticfiles/%s", val)))
 		http.Handle(fmt.Sprintf("/%s/", val), http.StripPrefix("/"+val, fileServer))
 	}
 
